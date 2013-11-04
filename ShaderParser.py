@@ -60,6 +60,23 @@ class ShaderParserException(Exception):
 ShaderIOVariable = collections.namedtuple('ShaderIOVariable',
     ['name', 'location', 'size', 'type', 'precision'])
 
+# preprocessor macros
+class Macro(object):
+
+    @staticmethod
+    def IsValidName(name):
+        # All macro names containing two consecutive underscores ( __ ) are reserved for future use as predefined macro names.
+        # All macro names prefixed with "GL_" ("GL" followed by a single underscore) are also reserved.
+        if '__' in name:
+            return False
+        if name.startswith('GL_'):
+            return False
+        return True
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
 class ShaderParser(object):
 
     def __init__(self):
@@ -121,6 +138,10 @@ class ShaderParser(object):
 
                 if name == 'version':
                     self.version = int(args[0].value)
+                elif name == 'define':
+                    self.define(args)
+                elif name == 'undef':
+                    self.undef(args)
 
     # split a input string into lines and tokenize each line
     def group_lines(self, input):
@@ -145,3 +166,14 @@ class ShaderParser(object):
 
         if current_line:
             yield current_line
+
+    def define(self, tokens):
+        macro_name = tokens[0].value
+        if not Macro.IsValidName(macro_name):
+            raise ShaderParserException(self.lexer.lineno, 'Invalid macro name ({0}) to define'.format(macro_name))
+        m = Macro(macro_name.value)
+
+    def undef(self, tokens):
+        macro_name = tokens[0].value
+        if not Macro.IsValidName(macro_name):
+            raise ShaderParserException(self.lexer.lineno, 'Invalid macro name ({0}) to undef'.format(macro_name))
