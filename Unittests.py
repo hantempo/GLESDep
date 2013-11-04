@@ -34,9 +34,9 @@ class TestShaderVariables(unittest.TestCase):
         sp = ShaderParser()
         sp.parse('\tvarying  vec2 vTexCoord ;  ')
         self.assertEqual(sp.version, 100)
-        #self.assertEqual(len(sp.uniforms), 0)
-        #self.assertEqual(len(sp.attributes), 0)
-        #self.assertEqual(len(sp.varyings), 1)
+        self.assertEqual(len(sp.uniforms), 0)
+        self.assertEqual(len(sp.attributes), 0)
+        self.assertEqual(len(sp.varyings), 1)
 
 if __name__ == '__main__':
     import logging

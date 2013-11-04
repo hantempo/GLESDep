@@ -1,7 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import ply.lex as lex
+import ply.yacc as yacc
 
 from ShaderPreprocessor import tokens, t_WHITESPACE, t_NUMBER, t_STRING, t_COMMENT, t_error
 from ShaderPreprocessor import ShaderPreprocessor
@@ -13,12 +13,24 @@ keywords = {
 }
 tokens += keywords.values()
 
+tokens += ['SEMICOLON']
+
+t_SEMICOLON = r';'
+
 def t_IDENTIFIER(t):
     r'[A-Za-z_][\w_]*'
     t.type = keywords.get(t.value, 'IDENTIFIER')
     return t
 
-lexer = lex.lex()
+def p_varying_declaration(p):
+    'varying_declaration : VARYING IDENTIFIER IDENTIFIER SEMICOLON'
+    print p
+
+def p_error(p):
+    print "Syntax error in input!"
+
+#lexer = lex.lex()
+parser = yacc.yacc()
 
 class ShaderParserException(Exception):
     def __init__(self, linenum, msg):
@@ -31,8 +43,6 @@ class ShaderParserException(Exception):
 class ShaderParser(object):
 
     def __init__(self):
-        self.lexer = lexer
-
         self.uniforms = {}
         self.varyings = {}
         self.attributes = {}
@@ -44,3 +54,5 @@ class ShaderParser(object):
         spp = ShaderPreprocessor()
         spp.preprocess(input, filename)
         self.version = spp.version
+
+        parser.parse(spp.output)
