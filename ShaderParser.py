@@ -1,36 +1,63 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import ply.yacc as yacc
+from subprocess import Popen, PIPE
+from ply import yacc
 
-from ShaderPreprocessor import tokens, t_WHITESPACE, t_NUMBER, t_STRING, t_COMMENT, t_error
-from ShaderPreprocessor import ShaderPreprocessor
+def preprocess(filename, cpp_path='cpp', cpp_args='-DGL_ES'):
 
-keywords = {
-    'varying'       : 'VARYING',
-    'uniform'       : 'UNIFORM',
-    'attribute'     : 'ATTRIBUTE',
-}
-tokens += keywords.values()
+    path_list = [cpp_path]
+    if isinstance(cpp_args, list):
+        path_list += cpp_args
+    elif cpp_args != '':
+        path_list += [cpp_args]
+    path_list += [filename]
 
-tokens += ['SEMICOLON']
+    try:
+        # Note the use of universal_newlines to treat all newlines
+        # as \n for Python's purpose
+        #
+        pipe = Popen(path_list, stdout=PIPE, universal_newlines=True)
+        text = pipe.communicate()[0]
+    except OSError as e:
+        raise RuntimeError("Unable to invoke 'cpp'.  " +
+            'Make sure its path was passed correctly\n' +
+            ('Original error: %s' % e))
 
-t_SEMICOLON = r';'
+    return text
 
-def t_IDENTIFIER(t):
-    r'[A-Za-z_][\w_]*'
-    t.type = keywords.get(t.value, 'IDENTIFIER')
-    return t
+class ShaderLexer(object):
+    keywords = (
+        'varying', 'uniform', 'attribute',
+        'precision', 'lowp', 'mediump', 'highp',
+        'vec2',
+    )
+    keywords_mapping = { k : k.upper() for k in keywords}
 
-def p_varying_declaration(p):
-    'varying_declaration : VARYING IDENTIFIER IDENTIFIER SEMICOLON'
-    print p
+    tokens = keywords_mapping.values() + [
+        'IDENTIFIER',
+        'SEMICOLON',
+    ]
 
-def p_error(p):
-    print "Syntax error in input!"
+    t_SEMICOLON = r';'
 
-#lexer = lex.lex()
-parser = yacc.yacc()
+    t_ignore = '\t'
+
+    def t_NEWLINE(self, t):
+        r'\n+'
+        t.lexer.lineno += t.value.count("\n")
+
+    def t_IDENTIFIER(self, t):
+        r'[A-Za-z_][0-9A-Za-z]*'
+        t.type = keywords_mapping.get(t.value, 'IDENTIFIER')
+        return t
+
+    def t_error(self, t):
+        logger.error('Illegal character %s' % repr(t.value[0]))
+
+#def p_varying_declaration(p):
+    #'varying_declaration : VARYING IDENTIFIER IDENTIFIER SEMICOLON'
+    #print p
 
 class ShaderParserException(Exception):
     def __init__(self, linenum, msg):
@@ -42,17 +69,74 @@ class ShaderParserException(Exception):
 
 class ShaderParser(object):
 
-    def __init__(self):
+    def __init__(self, yacc_debug=False):
+        self.lexer = ShaderLexer()
+        self.tokens = self.lexer.tokens
+        self.parser = yacc.yacc(module=self,
+            start='declaration_or_empty',
+            debug=yacc_debug)
+
+        self.version = 100
+
         self.uniforms = {}
         self.varyings = {}
         self.attributes = {}
 
-    def parse(self, input, filename=''):
-        self.filename = filename
+    def p_declaration_or_empty(self, p):
+        ''' declaration_or_empty : declaration
+                                 | empty
+        '''
+        p[0] = p[1]
 
-        # pre-process firstly
-        spp = ShaderPreprocessor()
-        spp.preprocess(input, filename)
-        self.version = spp.version
+    def p_declaration(self, p):
+        ''' declaration : declaration_body SEMICOLON
+        '''
+        p[0] = p[1]
 
-        parser.parse(spp.output)
+    def p_declaration_body(self, p):
+        ''' declaration_body : declaration_specifiers
+        '''
+        p[0] = p[1]
+
+    def p_declaration_specifiers(self, p):
+        ''' declaration_specifiers : category_qualifier type_specifier IDENTIFIER
+        '''
+        p[0] = p[1]
+
+    def p_category_qualifier(self, p):
+        ''' category_qualifier : VARYING
+                               | UNIFORM
+                               | ATTRIBUTE
+        '''
+        p[0] = p[1]
+
+    def p_type_specifier(self, p):
+        ''' type_specifier : VEC2
+        '''
+        p[0] = p[1]
+
+    def p_empty(self, p):
+        ''' empty : '''
+        p[0] = None
+
+    def p_error(self, p):
+        if p:
+            raise ShaderParserException(p.lineno, 'before: %s' % p.value)
+        else:
+            raise ShaderParserException(-1, 'at end of input')
+
+    def parse(self, text, filename='', debuglevel=0):
+        self.lexer.filename = filename
+        self.lexer.reset_lineno()
+
+        # check whether the first line of the input file contains "#version 300 es"
+        parts = text.split('\n', 1)
+        if parts[0].split() == ['#version', '300', 'es']:
+            self.version = 300
+
+        if len(parts) == 1:
+            return ''
+        else:
+            return self.parser.parse(input=text,
+                lexer=self.lexer,
+                debug=debuglevel)
