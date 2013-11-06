@@ -21,10 +21,17 @@ class TestPreprocessor(unittest.TestCase):
         #ifndef GL_ES
         uniform lowp sampler2D texture_unit0;
         #endif
+        #ifdef GL_ES
+        varying sampler2D texture_unit0;
+        #endif
         ''')
         self.assertEqual(sp.version, 300)
-        self.assertEqual(len(sp.input_variables), 0)
+        self.assertEqual(len(sp.input_variables), 1)
         self.assertEqual(len(sp.output_variables), 0)
+
+        self.assertTrue('texture_unit0' in sp.input_variables)
+        self.assertEqual(sp.input_variables['texture_unit0'].type, 'sampler2D')
+        self.assertEqual(sp.input_variables['texture_unit0'].layout_qualifier, 'varying')
 
 class TestShaderVariables(unittest.TestCase):
 

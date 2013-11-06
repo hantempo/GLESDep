@@ -47,7 +47,19 @@ class ShaderLexer(object):
 
     keywords = (
         # types
-        'vec2', 'vec3', 'float',
+        'void', 'bool', 'int', 'uint', 'float',
+        'vec2', 'vec3', 'vec4',
+        'bvec2', 'bvec3', 'bvec4',
+        'ivec2', 'ivec3', 'ivec4',
+        'uvec2', 'uvec3', 'uvec4',
+        'mat2', 'mat3', 'mat4',
+        'mat2x2', 'mat2x3', 'mat2x4',
+        'mat3x2', 'mat3x3', 'mat3x4',
+        'mat4x2', 'mat4x3', 'mat4x4',
+        'sampler2D', 'sampler2DArray', 'sampler3D', 'samplerCube',
+        'sampler2DShadow', 'sampler2DArrayShadow', 'samplerCubeShadow',
+        'isampler2D', 'isampler2DArray', 'isampler3D', 'isamplerCube',
+        'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube',
         # layout qualifiers
         'varying', 'uniform', 'attribute',
         #'precision', 'lowp', 'mediump', 'highp',
@@ -74,7 +86,7 @@ class ShaderLexer(object):
         #return t
 
     def t_IDENTIFIER(self, t):
-        r'[A-Za-z_][0-9A-Za-z]*'
+        r'[A-Za-z_][0-9A-Za-z_]*'
         t.type = self.keywords_mapping.get(t.value, 'IDENTIFIER')
         return t
 
@@ -158,21 +170,62 @@ class ShaderParser(object):
         p[0] = p[1]
 
     def p_declaration_specifiers(self, p):
-        ''' declaration_specifiers : category_qualifier type_specifier IDENTIFIER
+        ''' declaration_specifiers : layout_qualifier type_specifier IDENTIFIER
         '''
         p[0] = ShaderVariable(type=p[2], name=p[3], layout_qualifier=p[1])
 
-    def p_category_qualifier(self, p):
-        ''' category_qualifier : VARYING
+    def p_layout_qualifier(self, p):
+        ''' layout_qualifier : VARYING
                                | UNIFORM
                                | ATTRIBUTE
         '''
         p[0] = p[1]
 
     def p_type_specifier(self, p):
-        ''' type_specifier : FLOAT
+        ''' type_specifier : VOID
+                           | BOOL
+                           | INT
+                           | UINT
+                           | FLOAT
                            | VEC2
                            | VEC3
+                           | VEC4
+                           | BVEC2
+                           | BVEC3
+                           | BVEC4
+                           | IVEC2
+                           | IVEC3
+                           | IVEC4
+                           | UVEC2
+                           | UVEC3
+                           | UVEC4
+                           | MAT2
+                           | MAT3
+                           | MAT4
+                           | MAT2X2
+                           | MAT2X3
+                           | MAT2X4
+                           | MAT3X2
+                           | MAT3X3
+                           | MAT3X4
+                           | MAT4X2
+                           | MAT4X3
+                           | MAT4X4
+                           | SAMPLER2D
+                           | SAMPLER2DARRAY
+                           | SAMPLER3D
+                           | SAMPLERCUBE
+                           | SAMPLER2DSHADOW
+                           | SAMPLER2DARRAYSHADOW
+                           | SAMPLERCUBESHADOW
+                           | ISAMPLER2D
+                           | ISAMPLER2DARRAY
+                           | ISAMPLER3D
+                           | ISAMPLERCUBE
+                           | USAMPLER2D
+                           | USAMPLER2DARRAY
+                           | USAMPLER3D
+                           | USAMPLERCUBE
         '''
         p[0] = p[1]
 
