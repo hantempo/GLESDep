@@ -20,9 +20,24 @@ class TestShaderVariables(unittest.TestCase):
         sp = ShaderParser()
         sp.parse('\tvarying  vec2 vTexCoord ;  ')
         self.assertEqual(sp.version, 100)
-        self.assertEqual(len(sp.uniforms), 0)
-        self.assertEqual(len(sp.attributes), 0)
-        self.assertEqual(len(sp.varyings), 1)
+        self.assertEqual(len(sp.input_variables), 1)
+        self.assertEqual(len(sp.output_variables), 0)
+
+        self.assertTrue('vTexCoord' in sp.input_variables)
+        self.assertEqual(sp.input_variables['vTexCoord'].name, 'vTexCoord')
+        self.assertEqual(sp.input_variables['vTexCoord'].type, 'vec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
+
+    def test_io_variables(self):
+        sp = ShaderParser()
+        sp.parse('''#version 300 es
+        attribute vec3 fresnet;
+        uniform float time;
+        varying  vec2 vTexCoord ;
+        ''', fragment_shader=False)
+        self.assertEqual(sp.version, 300)
+        self.assertEqual(len(sp.input_variables), 1)
+        self.assertEqual(len(sp.output_variables), 1)
 
 if __name__ == '__main__':
     import logging
