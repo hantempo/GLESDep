@@ -1,6 +1,6 @@
 import unittest
 
-from ShaderParser import ShaderParser, ShaderParserException
+from ShaderParser import ShaderParser
 
 class TestPreprocessor(unittest.TestCase):
 
@@ -13,6 +13,18 @@ class TestPreprocessor(unittest.TestCase):
         sp = ShaderParser()
         sp.parse('  \t #version 300  es')
         self.assertEqual(sp.version, 300)
+
+    def test_gl_es(self):
+        # GL_ES is a predefined macro
+        sp = ShaderParser()
+        sp.parse('''  \t #version 300  es
+        #ifndef GL_ES
+        uniform lowp sampler2D texture_unit0;
+        #endif
+        ''')
+        self.assertEqual(sp.version, 300)
+        self.assertEqual(len(sp.input_variables), 0)
+        self.assertEqual(len(sp.output_variables), 0)
 
 class TestShaderVariables(unittest.TestCase):
 
@@ -38,6 +50,14 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.version, 300)
         self.assertEqual(len(sp.input_variables), 1)
         self.assertEqual(len(sp.output_variables), 1)
+
+        self.assertTrue('fresnet' in sp.input_variables)
+        self.assertEqual(sp.input_variables['fresnet'].type, 'vec3')
+        self.assertEqual(sp.input_variables['fresnet'].layout_qualifier, 'attribute')
+
+        self.assertTrue('vTexCoord' in sp.output_variables)
+        self.assertEqual(sp.output_variables['vTexCoord'].type, 'vec2')
+        self.assertEqual(sp.output_variables['vTexCoord'].layout_qualifier, 'varying')
 
 if __name__ == '__main__':
     import logging

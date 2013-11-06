@@ -4,25 +4,29 @@ logger = logging.getLogger(__name__)
 from subprocess import Popen, PIPE
 from ply import lex, yacc
 
-def preprocess(filename, cpp_path='cpp', cpp_args='-DGL_ES'):
+def preprocess(input_text, cpp_path='cpp', cpp_args='-DGL_ES'):
 
     path_list = [cpp_path]
     if isinstance(cpp_args, list):
         path_list += cpp_args
     elif cpp_args != '':
         path_list += [cpp_args]
-    path_list += [filename]
 
     try:
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
         #
-        pipe = Popen(path_list, stdout=PIPE, universal_newlines=True)
-        text = pipe.communicate()[0]
+        pipe = Popen(path_list, stdin=PIPE, stdout=PIPE, universal_newlines=True)
+        text = pipe.communicate(input=input_text)[0]
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
             'Make sure its path was passed correctly\n' +
             ('Original error: %s' % e))
+
+    # remove the leading comment lines
+    lines = text.splitlines()
+    lines = filter(lambda l : not l.lstrip().startswith('#'), lines)
+    text = '\n'.join(lines)
 
     return text
 
@@ -52,6 +56,7 @@ class ShaderLexer(object):
 
     tokens = keywords_mapping.values() + [
         'IDENTIFIER',
+        #'COMMENT',
         'SEMICOLON',
     ]
 
@@ -62,6 +67,11 @@ class ShaderLexer(object):
     def t_NEWLINE(self, t):
         r'\n+'
         t.lexer.lineno += t.value.count("\n")
+
+    #def t_COMMENT(self, t):
+        #r'/\*(.|\n)*?\*/'
+        #t.lexer.lineno += t.value.count("\n")
+        #return t
 
     def t_IDENTIFIER(self, t):
         r'[A-Za-z_][0-9A-Za-z]*'
@@ -181,6 +191,8 @@ class ShaderParser(object):
         self.lexer.build()
         self.lexer.reset_lineno()
 
+        logger.debug('Input before pre-processor : "%s"' % (text))
+
         # check whether the first line of the input file contains "#version 300 es"
         parts = text.split('\n', 1)
         if parts[0].split() == ['#version', '300', 'es']:
@@ -189,6 +201,11 @@ class ShaderParser(object):
                 text = ''
             else:
                 text = parts[1]
+
+        if text:
+            text = preprocess(text)
+
+        logger.debug('Input after pre-processor : "%s"' % (text))
 
         io_variables = self.parser.parse(input=text,
             lexer=self.lexer,
