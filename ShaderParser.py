@@ -128,7 +128,13 @@ class ShaderParserException(Exception):
     def __repr__(self):
         return 'Shader Parser Exception [Line No.{0}] : {1}'.format(self.linenum, self.message)
 
-class ShaderVariable(object):
+class PrecisionStatement(object):
+
+    def __init__(self, precision_qualifier, type_specifier):
+        self.precision_qualifier = precision_qualifier
+        self.type_specifier = type_specifier
+
+class Variable(object):
 
     def __init__(self, type, name, layout_qualifier=None, precision_qualifier=None):
         self.type = type
@@ -201,12 +207,18 @@ class ShaderParser(object):
     def p_declaration_specifiers1(self, p):
         ''' declaration_specifiers : layout_qualifier type_specifier IDENTIFIER
         '''
-        p[0] = ShaderVariable(type=p[2], name=p[3], layout_qualifier=p[1])
+        p[0] = Variable(type=p[2], name=p[3], layout_qualifier=p[1])
 
     def p_declaration_specifiers2(self, p):
         ''' declaration_specifiers : layout_qualifier precision_qualifier type_specifier IDENTIFIER
         '''
-        p[0] = ShaderVariable(type=p[3], name=p[4], layout_qualifier=p[1], precision_qualifier=p[2])
+        p[0] = Variable(type=p[3], name=p[4], layout_qualifier=p[1], precision_qualifier=p[2])
+
+    # precision statement : set default precision qualifier for some type(s)
+    def p_declaration_specifiers3(self, p):
+        ''' declaration_specifiers : PRECISION precision_qualifier type_specifier
+        '''
+        p[0] = PrecisionStatement(precision_qualifier=p[2], type_specifier=p[3])
 
     def p_layout_qualifier(self, p):
         ''' layout_qualifier : VARYING
@@ -303,22 +315,26 @@ class ShaderParser(object):
 
         logger.debug('Input after pre-processor : "%s"' % (text))
 
-        io_variables = self.parser.parse(input=text,
+        declaration_list = self.parser.parse(input=text,
             lexer=self.lexer,
             debug=debuglevel)
-        for var in io_variables:
-            # use default precision qualifier if equals None
-            if not var.precision_qualifier:
-                var.precision_qualifier = self.get_default_precision_qualifier(var.type)
-                if var.precision_qualifier == None:
-                    logger.error('Unexpected non-precision-qualified variable: "%s"' % str(var))
+        for decal in declaration_list:
+            if isinstance(decal, PrecisionStatement):
+                self.set_default_precision_qualifier(decal.type_specifier, decal.precision_qualifier)
+            elif isinstance(decal, Variable):
+                var = decal
+                # use default precision qualifier if equals None
+                if not var.precision_qualifier:
+                    var.precision_qualifier = self.get_default_precision_qualifier(var.type)
+                    if var.precision_qualifier == None:
+                        logger.error('Unexpected non-precision-qualified variable: "%s"' % str(var))
 
-            if var.is_input_variable(fragment_shader):
-                self.input_variables[var.name] = var
-            elif var.is_output_variable(fragment_shader):
-                self.output_variables[var.name] = var
-            elif var.layout_qualifier == 'uniform':
-                self.uniform_variables[var.name] = var
+                if var.is_input_variable(fragment_shader):
+                    self.input_variables[var.name] = var
+                elif var.is_output_variable(fragment_shader):
+                    self.output_variables[var.name] = var
+                elif var.layout_qualifier == 'uniform':
+                    self.uniform_variables[var.name] = var
 
     def initialize_default_precision_qualifiers(self, is_fragment_shader):
         if is_fragment_shader:

@@ -125,23 +125,30 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'lowp')
 
-        #sp = ShaderParser()
-        #sp.parse('''
-        #precision mediump samplerCube;
-        #uniform samplerCube time;
-        #varying uvec2 vTexCoord ;
-        #''', fragment_shader=True)
-        #self.assertEqual(sp.version, 100)
+        sp = ShaderParser()
+        sp.parse('''
+        precision mediump samplerCube;
+        uniform samplerCube time;
+        varying uvec2 vTexCoord ;
+        precision highp samplerCube;
+        varying samplerCube space;
+        ''', fragment_shader=True)
+        self.assertEqual(sp.version, 100)
 
-        #self.assertTrue('vTexCoord' in sp.input_variables)
-        #self.assertEqual(sp.input_variables['vTexCoord'].type, 'uvec2')
-        #self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
-        #self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
+        self.assertTrue('vTexCoord' in sp.input_variables)
+        self.assertEqual(sp.input_variables['vTexCoord'].type, 'uvec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
+        self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
 
-        #self.assertTrue('time' in sp.uniform_variables)
-        #self.assertEqual(sp.uniform_variables['time'].type, 'samplerCube')
-        #self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
-        #self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'mediump')
+        self.assertTrue('time' in sp.uniform_variables)
+        self.assertEqual(sp.uniform_variables['time'].type, 'samplerCube')
+        self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
+        self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'mediump')
+
+        self.assertTrue('space' in sp.input_variables)
+        self.assertEqual(sp.input_variables['space'].type, 'samplerCube')
+        self.assertEqual(sp.input_variables['space'].layout_qualifier, 'varying')
+        self.assertEqual(sp.input_variables['space'].precision_qualifier, 'highp')
 
 if __name__ == '__main__':
     import logging
