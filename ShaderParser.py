@@ -107,6 +107,38 @@ class ShaderParserException(Exception):
 
 class ShaderVariable(object):
 
+    @staticmethod
+    def is_floating_point_type(type):
+        return type in ('float', 'vec2', 'vec3', 'vec4',
+            'mat2', 'mat3', 'mat4',
+            'mat2x2', 'mat2x3', 'mat2x4',
+            'mat3x2', 'mat3x3', 'mat3x4',
+            'mat4x2', 'mat4x3', 'mat4x4')
+
+    @staticmethod
+    def is_integer_type(type):
+        return type in ('bool', 'int', 'uint',
+            'bvec2', 'bvec3', 'bvec4',
+            'ivec2', 'ivec3', 'ivec4',
+            'uvec2', 'uvec3', 'uvec4')
+
+    @staticmethod
+    def get_default_precision_qualifier(type, is_fragment_shader):
+        if is_fragment_shader:
+            if ShaderVariable.is_integer_type(type):
+                return 'mediump'
+            elif type in ('sampler2D', 'samplerCube'):
+                return 'lowp'
+            else:
+                logger.error('Unexpected non-precision-qualified type in fragment shader : "%s"' % type)
+        else:
+            if ShaderVariable.is_floating_point_type(type) or ShaderVariable.is_integer_type(type):
+                return 'highp'
+            elif type in ('sampler2D', 'samplerCube'):
+                return 'lowp'
+            else:
+                logger.error('Unexpected non-precision-qualified type in vertex shader : "%s"' % type)
+
     def __init__(self, type, name, layout_qualifier, precision_qualifier=None):
         self.type = type
         self.name = name
@@ -137,10 +169,7 @@ class ShaderParser(object):
         self.version = 100
         self.input_variables = {}
         self.output_variables = {}
-
-        self.uniforms = {}
-        self.varyings = {}
-        self.attributes = {}
+        self.uniform_variables = {}
 
     def p_declaration_list_or_empty(self, p):
         ''' declaration_list_or_empty : declaration_list
@@ -278,7 +307,14 @@ class ShaderParser(object):
             lexer=self.lexer,
             debug=debuglevel)
         for var in io_variables:
+            # use default precision qualifier if equals None
+            if not var.precision_qualifier:
+                var.precision_qualifier = var.get_default_precision_qualifier(
+                    var.type, fragment_shader)
+
             if var.is_input_variable(fragment_shader):
                 self.input_variables[var.name] = var
             elif var.is_output_variable(fragment_shader):
                 self.output_variables[var.name] = var
+            elif var.layout_qualifier == 'uniform':
+                self.uniform_variables[var.name] = var
