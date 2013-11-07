@@ -101,6 +101,12 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'highp')
 
+        self.assertEqual(sp.get_default_precision_qualifier('int'), 'highp')
+        self.assertEqual(sp.get_default_precision_qualifier('float'), 'highp')
+        self.assertEqual(sp.get_default_precision_qualifier('sampler2D'), 'lowp')
+        self.assertEqual(sp.get_default_precision_qualifier('samplerCube'), 'lowp')
+        self.assertEqual(sp.get_default_precision_qualifier('sampler2DArray'), None)
+
     def test_default_precision(self):
         sp = ShaderParser()
         sp.parse('''
@@ -118,6 +124,24 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.uniform_variables['time'].type, 'sampler2D')
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'lowp')
+
+        #sp = ShaderParser()
+        #sp.parse('''
+        #precision mediump samplerCube;
+        #uniform samplerCube time;
+        #varying uvec2 vTexCoord ;
+        #''', fragment_shader=True)
+        #self.assertEqual(sp.version, 100)
+
+        #self.assertTrue('vTexCoord' in sp.input_variables)
+        #self.assertEqual(sp.input_variables['vTexCoord'].type, 'uvec2')
+        #self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
+        #self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
+
+        #self.assertTrue('time' in sp.uniform_variables)
+        #self.assertEqual(sp.uniform_variables['time'].type, 'samplerCube')
+        #self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
+        #self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'mediump')
 
 if __name__ == '__main__':
     import logging

@@ -30,6 +30,29 @@ def preprocess(input_text, cpp_path='cpp', cpp_args='-DGL_ES'):
 
     return text
 
+# categories of variable types
+def is_floating_point_type(type):
+    return type in (
+        'float', 'vec2', 'vec3', 'vec4',
+        'mat2', 'mat3', 'mat4',
+        'mat2x2', 'mat2x3', 'mat2x4',
+        'mat3x2', 'mat3x3', 'mat3x4',
+        'mat4x2', 'mat4x3', 'mat4x4')
+
+def is_integer_type(type):
+    return type in (
+        'bool', 'int', 'uint',
+        'bvec2', 'bvec3', 'bvec4',
+        'ivec2', 'ivec3', 'ivec4',
+        'uvec2', 'uvec3', 'uvec4')
+
+def is_sampler_type(type):
+    return type in (
+        'sampler2D', 'sampler2DArray', 'sampler3D', 'samplerCube',
+        'sampler2DShadow', 'sampler2DArrayShadow', 'samplerCubeShadow',
+        'isampler2D', 'isampler2DArray', 'isampler3D', 'isamplerCube',
+        'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube')
+
 class ShaderLexer(object):
 
     def __init__(self):
@@ -107,43 +130,16 @@ class ShaderParserException(Exception):
 
 class ShaderVariable(object):
 
-    @staticmethod
-    def is_floating_point_type(type):
-        return type in ('float', 'vec2', 'vec3', 'vec4',
-            'mat2', 'mat3', 'mat4',
-            'mat2x2', 'mat2x3', 'mat2x4',
-            'mat3x2', 'mat3x3', 'mat3x4',
-            'mat4x2', 'mat4x3', 'mat4x4')
-
-    @staticmethod
-    def is_integer_type(type):
-        return type in ('bool', 'int', 'uint',
-            'bvec2', 'bvec3', 'bvec4',
-            'ivec2', 'ivec3', 'ivec4',
-            'uvec2', 'uvec3', 'uvec4')
-
-    @staticmethod
-    def get_default_precision_qualifier(type, is_fragment_shader):
-        if is_fragment_shader:
-            if ShaderVariable.is_integer_type(type):
-                return 'mediump'
-            elif type in ('sampler2D', 'samplerCube'):
-                return 'lowp'
-            else:
-                logger.error('Unexpected non-precision-qualified type in fragment shader : "%s"' % type)
-        else:
-            if ShaderVariable.is_floating_point_type(type) or ShaderVariable.is_integer_type(type):
-                return 'highp'
-            elif type in ('sampler2D', 'samplerCube'):
-                return 'lowp'
-            else:
-                logger.error('Unexpected non-precision-qualified type in vertex shader : "%s"' % type)
-
-    def __init__(self, type, name, layout_qualifier, precision_qualifier=None):
+    def __init__(self, type, name, layout_qualifier=None, precision_qualifier=None):
         self.type = type
         self.name = name
         self.layout_qualifier = layout_qualifier
         self.precision_qualifier = precision_qualifier
+
+    def __repr__(self):
+        return 'Shader variable : %s %s %s %s' % (
+            self.layout_qualifier, self.precision_qualifier,
+            self.type, self.name)
 
     def is_input_variable(self, fragment_shader):
         if fragment_shader:
@@ -170,6 +166,8 @@ class ShaderParser(object):
         self.input_variables = {}
         self.output_variables = {}
         self.uniform_variables = {}
+
+        self.default_precision_qualifier = {}
 
     def p_declaration_list_or_empty(self, p):
         ''' declaration_list_or_empty : declaration_list
@@ -287,6 +285,8 @@ class ShaderParser(object):
         self.lexer.build()
         self.lexer.reset_lineno()
 
+        self.initialize_default_precision_qualifiers(fragment_shader)
+
         logger.debug('Input before pre-processor : "%s"' % (text))
 
         # check whether the first line of the input file contains "#version 300 es"
@@ -309,8 +309,9 @@ class ShaderParser(object):
         for var in io_variables:
             # use default precision qualifier if equals None
             if not var.precision_qualifier:
-                var.precision_qualifier = var.get_default_precision_qualifier(
-                    var.type, fragment_shader)
+                var.precision_qualifier = self.get_default_precision_qualifier(var.type)
+                if var.precision_qualifier == None:
+                    logger.error('Unexpected non-precision-qualified variable: "%s"' % str(var))
 
             if var.is_input_variable(fragment_shader):
                 self.input_variables[var.name] = var
@@ -318,3 +319,34 @@ class ShaderParser(object):
                 self.output_variables[var.name] = var
             elif var.layout_qualifier == 'uniform':
                 self.uniform_variables[var.name] = var
+
+    def initialize_default_precision_qualifiers(self, is_fragment_shader):
+        if is_fragment_shader:
+            self.default_precision_qualifier['int'] = 'mediump'
+            self.default_precision_qualifier['sampler2D'] = 'lowp'
+            self.default_precision_qualifier['samplerCube'] = 'lowp'
+        else:
+            self.default_precision_qualifier['int'] = 'highp'
+            self.default_precision_qualifier['float'] = 'highp'
+            self.default_precision_qualifier['sampler2D'] = 'lowp'
+            self.default_precision_qualifier['samplerCube'] = 'lowp'
+
+    def get_default_precision_qualifier(self, type):
+        if is_integer_type(type):
+            type = 'int'
+        elif is_floating_point_type(type):
+            type = 'float'
+        return self.default_precision_qualifier.get(type, None)
+
+    # in "precision precision-qualifier type-qualifier"
+    # valid type qualifier : int, float or any of sampler types
+    # valid precision_qualifier : lowp, mediump, highp
+    def set_default_precision_qualifier(self, type, precision_qualifier):
+        if precision_qualifier not in ('lowp', 'mediump', 'highp'):
+            logger.error('Unexpected precision-qualifier in default precision qualifier setting : "%s"' % precision_qualifier)
+            return
+
+        if is_sampler_type(type) or type in ('int', 'float'):
+            self.default_precision_qualifier[type] = precision_qualifier
+        else:
+            logger.error('Unexpected type-qualifier in default precision qualifier setting : "%s"' % type)
