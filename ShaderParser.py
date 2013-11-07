@@ -84,7 +84,7 @@ class ShaderLexer(object):
         'isampler2D', 'isampler2DArray', 'isampler3D', 'isamplerCube',
         'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube',
         # layout qualifiers
-        'varying', 'uniform', 'attribute',
+        'varying', 'uniform', 'attribute', 'in', 'out',
         # precision qualifiers
         'precision', 'lowp', 'mediump', 'highp',
     )
@@ -149,15 +149,15 @@ class Variable(object):
 
     def is_input_variable(self, fragment_shader):
         if fragment_shader:
-            return self.layout_qualifier in ('varying')
+            return self.layout_qualifier in ('varying', 'in')
         else:
-            return self.layout_qualifier in ('attribute')
+            return self.layout_qualifier in ('attribute', 'in')
 
     def is_output_variable(self, fragment_shader):
         if fragment_shader:
-            return self.layout_qualifier in ()
+            return self.layout_qualifier in ('out')
         else:
-            return self.layout_qualifier in ('varying')
+            return self.layout_qualifier in ('varying', 'out')
 
 class ShaderParser(object):
 
@@ -224,6 +224,8 @@ class ShaderParser(object):
         ''' layout_qualifier : VARYING
                              | UNIFORM
                              | ATTRIBUTE
+                             | IN
+                             | OUT
         '''
         p[0] = p[1]
 

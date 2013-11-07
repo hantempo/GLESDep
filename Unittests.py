@@ -126,18 +126,18 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'lowp')
 
         sp = ShaderParser()
-        sp.parse('''
+        sp.parse('''#version 300 es
         precision mediump samplerCube;
         uniform samplerCube time;
-        varying uvec2 vTexCoord ;
+        in uvec2 vTexCoord ;
         precision highp samplerCube;
-        varying samplerCube space;
+        out samplerCube space;
         ''', fragment_shader=True)
-        self.assertEqual(sp.version, 100)
+        self.assertEqual(sp.version, 300)
 
         self.assertTrue('vTexCoord' in sp.input_variables)
         self.assertEqual(sp.input_variables['vTexCoord'].type, 'uvec2')
-        self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
+        self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'in')
         self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
 
         self.assertTrue('time' in sp.uniform_variables)
@@ -145,10 +145,10 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'mediump')
 
-        self.assertTrue('space' in sp.input_variables)
-        self.assertEqual(sp.input_variables['space'].type, 'samplerCube')
-        self.assertEqual(sp.input_variables['space'].layout_qualifier, 'varying')
-        self.assertEqual(sp.input_variables['space'].precision_qualifier, 'highp')
+        self.assertTrue('space' in sp.output_variables)
+        self.assertEqual(sp.output_variables['space'].type, 'samplerCube')
+        self.assertEqual(sp.output_variables['space'].layout_qualifier, 'out')
+        self.assertEqual(sp.output_variables['space'].precision_qualifier, 'highp')
 
 if __name__ == '__main__':
     import logging
