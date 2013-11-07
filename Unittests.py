@@ -66,6 +66,27 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.output_variables['vTexCoord'].type, 'vec2')
         self.assertEqual(sp.output_variables['vTexCoord'].layout_qualifier, 'varying')
 
+    def test_precision(self):
+        sp = ShaderParser()
+        sp.parse('''#version 300 es
+        attribute lowp vec3 fresnet;
+        uniform mediump float time;
+        varying highp vec2 vTexCoord ;
+        ''', fragment_shader=False)
+        self.assertEqual(sp.version, 300)
+        self.assertEqual(len(sp.input_variables), 1)
+        self.assertEqual(len(sp.output_variables), 1)
+
+        self.assertTrue('fresnet' in sp.input_variables)
+        self.assertEqual(sp.input_variables['fresnet'].type, 'vec3')
+        self.assertEqual(sp.input_variables['fresnet'].layout_qualifier, 'attribute')
+        self.assertEqual(sp.input_variables['fresnet'].precision_qualifier, 'lowp')
+
+        self.assertTrue('vTexCoord' in sp.output_variables)
+        self.assertEqual(sp.output_variables['vTexCoord'].type, 'vec2')
+        self.assertEqual(sp.output_variables['vTexCoord'].layout_qualifier, 'varying')
+        self.assertEqual(sp.output_variables['vTexCoord'].precision_qualifier, 'highp')
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)

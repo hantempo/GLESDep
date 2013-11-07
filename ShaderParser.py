@@ -62,7 +62,8 @@ class ShaderLexer(object):
         'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube',
         # layout qualifiers
         'varying', 'uniform', 'attribute',
-        #'precision', 'lowp', 'mediump', 'highp',
+        # precision qualifiers
+        'precision', 'lowp', 'mediump', 'highp',
     )
     keywords_mapping = { k : k.upper() for k in keywords}
 
@@ -106,10 +107,11 @@ class ShaderParserException(Exception):
 
 class ShaderVariable(object):
 
-    def __init__(self, type, name, layout_qualifier):
+    def __init__(self, type, name, layout_qualifier, precision_qualifier=None):
         self.type = type
         self.name = name
         self.layout_qualifier = layout_qualifier
+        self.precision_qualifier = precision_qualifier
 
     def is_input_variable(self, fragment_shader):
         if fragment_shader:
@@ -169,15 +171,27 @@ class ShaderParser(object):
         '''
         p[0] = p[1]
 
-    def p_declaration_specifiers(self, p):
+    def p_declaration_specifiers1(self, p):
         ''' declaration_specifiers : layout_qualifier type_specifier IDENTIFIER
         '''
         p[0] = ShaderVariable(type=p[2], name=p[3], layout_qualifier=p[1])
 
+    def p_declaration_specifiers2(self, p):
+        ''' declaration_specifiers : layout_qualifier precision_qualifier type_specifier IDENTIFIER
+        '''
+        p[0] = ShaderVariable(type=p[3], name=p[4], layout_qualifier=p[1], precision_qualifier=p[2])
+
     def p_layout_qualifier(self, p):
         ''' layout_qualifier : VARYING
-                               | UNIFORM
-                               | ATTRIBUTE
+                             | UNIFORM
+                             | ATTRIBUTE
+        '''
+        p[0] = p[1]
+
+    def p_precision_qualifier(self, p):
+        ''' precision_qualifier : LOWP
+                                | MEDIUMP
+                                | HIGHP
         '''
         p[0] = p[1]
 
