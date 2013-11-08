@@ -94,9 +94,15 @@ class ShaderLexer(object):
         'IDENTIFIER',
         #'COMMENT',
         'SEMICOLON',
+        'LEFT_BRACE', 'RIGHT_BRACE',
+        'LEFT_PAREN', 'RIGHT_PAREN',
     ]
 
     t_SEMICOLON = r';'
+    t_LEFT_PAREN = r'\('
+    t_RIGHT_PAREN = r'\)'
+    t_LEFT_BRACE = r'\{'
+    t_RIGHT_BRACE = r'\}'
 
     t_ignore = ' \t'
 
@@ -159,13 +165,38 @@ class Variable(object):
         else:
             return self.layout_qualifier in ('varying', 'out')
 
+class FunctionPrototype(object):
+
+    def __init__(self, name, return_type, parameters=[]):
+        self.name = name
+        self.return_type = return_type
+        self.parameters = parameters
+
+class FunctionDefinition(object):
+
+    def __init__(self, function_prototype, statements):
+        self.function_prototype = function_prototype
+        self.statements = statements
+
+    @property
+    def name(self):
+        return self.function_prototype.name
+
+    @property
+    def return_type(self):
+        return self.function_prototype.return_type
+
+    @property
+    def parameters(self):
+        return self.function_prototype.parameters
+
 class ShaderParser(object):
 
     def __init__(self, debug=False):
         self.lexer = ShaderLexer()
         self.tokens = self.lexer.tokens
         self.parser = yacc.yacc(module=self,
-            start='declaration_list_or_empty',
+            start='translation_unit_or_empty',
             debug=debug)
 
         self.version = 100
@@ -175,8 +206,10 @@ class ShaderParser(object):
 
         self.default_precision_qualifier = {}
 
-    def p_declaration_list_or_empty(self, p):
-        ''' declaration_list_or_empty : declaration_list
+        self.function_definitions = {}
+
+    def p_translation_unit_or_empty(self, p):
+        ''' translation_unit_or_empty : translation_unit
                                       | empty
         '''
         if p[1] == None:
@@ -184,15 +217,35 @@ class ShaderParser(object):
         else:
             p[0] = p[1]
 
-    def p_declaration_list_1(self, p):
-        ''' declaration_list : declaration_list declaration
+    def p_translation_unit(self, p):
+        ''' translation_unit : external_declaration
+                             | translation_unit external_declaration
         '''
-        p[0] = p[1] + [p[2]]
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[2]]
 
-    def p_declaration_list_2(self, p):
-        ''' declaration_list : declaration
+    def p_external_declaration(self, p):
+        ''' external_declaration : function_definition
+                                 | declaration
         '''
-        p[0] = [p[1]]
+        p[0] = p[1]
+
+    def p_function_definition(self, p):
+        ''' function_definition : function_prototype compound_statement
+        '''
+        p[0] = FunctionDefinition(function_prototype=p[1], statements=p[2])
+
+    def p_function_prototype(self, p):
+        ''' function_prototype : type_specifier IDENTIFIER LEFT_PAREN RIGHT_PAREN
+        '''
+        p[0] = FunctionPrototype(name=p[2], return_type=p[1])
+
+    def p_compound_statement(self, p):
+        ''' compound_statement : LEFT_BRACE RIGHT_BRACE
+        '''
+        p[0] = []
 
     def p_declaration(self, p):
         ''' declaration : declaration_body SEMICOLON
@@ -337,6 +390,8 @@ class ShaderParser(object):
                     self.output_variables[var.name] = var
                 elif var.layout_qualifier == 'uniform':
                     self.uniform_variables[var.name] = var
+            elif isinstance(decal, FunctionDefinition):
+                self.function_definitions[decal.name] = decal
 
     def initialize_default_precision_qualifiers(self, is_fragment_shader):
         if is_fragment_shader:

@@ -150,6 +150,26 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.output_variables['space'].layout_qualifier, 'out')
         self.assertEqual(sp.output_variables['space'].precision_qualifier, 'highp')
 
+class TestFunctionDefinition(unittest.TestCase):
+
+    def test_empty_function_definition(self):
+        sp = ShaderParser()
+        sp.parse('''
+        attribute vec3 vertex;
+        void main() {}
+        ''', fragment_shader=False)
+        self.assertEqual(sp.version, 100)
+
+        self.assertTrue('vertex' in sp.input_variables)
+        self.assertEqual(sp.input_variables['vertex'].type, 'vec3')
+        self.assertEqual(sp.input_variables['vertex'].layout_qualifier, 'attribute')
+        self.assertEqual(sp.input_variables['vertex'].precision_qualifier, 'highp')
+
+        self.assertEqual(len(sp.function_definitions), 1)
+        self.assertTrue('main' in sp.function_definitions)
+        self.assertEqual(sp.function_definitions['main'].return_type, 'void')
+        self.assertEqual(sp.function_definitions['main'].parameters, [])
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)
