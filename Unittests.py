@@ -178,7 +178,7 @@ class TestFunctionDefinition(unittest.TestCase):
         uniform mat4 mvp;
         void main()
         {
-            gl_Position = vertex;
+            gl_Position = 2 * mvp * vertex;
         }
         ''', fragment_shader=False)
         self.assertEqual(sp.version, 100)

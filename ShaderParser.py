@@ -93,20 +93,33 @@ class ShaderLexer(object):
     tokens = keywords_mapping.values() + [
         'IDENTIFIER',
         #'COMMENT',
+        # multiplicative operators
+        'STAR',
+        # assignment operators
         'EQUAL',
         'SEMICOLON',
         'LEFT_BRACE', 'RIGHT_BRACE',
         'LEFT_PAREN', 'RIGHT_PAREN',
+        # literal
+        'INT_CONSTANT', 'FLOAT_CONSTANT', 'BOOL_CONSTANT',
     ]
 
     t_SEMICOLON = r';'
 
+    # multiplicative operators
+    t_STAR = r'\*'
+
+    # assignment operators
     t_EQUAL = r'='
 
     t_LEFT_PAREN = r'\('
     t_RIGHT_PAREN = r'\)'
     t_LEFT_BRACE = r'\{'
     t_RIGHT_BRACE = r'\}'
+
+    t_INT_CONSTANT = r'\d+([uU]|[lL]|[uU][lL]|[lL][uU])?'
+    t_FLOAT_CONSTANT = r'((\d+)(\.\d+)(e(\+|-)?(\d+))? | (\d+)e(\+|-)?(\d+))([lL]|[fF])?'
+    t_BOOL_CONSTANT = r'true|false'
 
     t_ignore = ' \t'
 
@@ -293,10 +306,28 @@ class ShaderParser(object):
         '''
         p[0] = p[1]
 
-    def p_assignment_expression(self, p):
-        ''' assignment_expression : IDENTIFIER assignment_operator IDENTIFIER
+    def p_unary_expression(self, p):
+        ''' unary_expression : IDENTIFIER
+                             | INT_CONSTANT
+                             | FLOAT_CONSTANT
+                             | BOOL_CONSTANT
         '''
-        p[0] = Assignment(p[2], p[1], p[3])
+        p[0] = p[1]
+
+    def p_multiplicative_expression(self, p):
+        ''' multiplicative_expression : unary_expression
+                                      | multiplicative_expression STAR unary_expression
+        '''
+        p[0] = p[1]
+
+    def p_assignment_expression(self, p):
+        ''' assignment_expression : multiplicative_expression
+                                  | unary_expression assignment_operator assignment_expression
+        '''
+        if len(p) == 2:
+            p[0] = p[1]
+        else:
+            p[0] = Assignment(p[2], p[1], p[3])
 
     def p_declaration(self, p):
         ''' declaration : declaration_body SEMICOLON
