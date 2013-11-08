@@ -93,12 +93,16 @@ class ShaderLexer(object):
     tokens = keywords_mapping.values() + [
         'IDENTIFIER',
         #'COMMENT',
+        'EQUAL',
         'SEMICOLON',
         'LEFT_BRACE', 'RIGHT_BRACE',
         'LEFT_PAREN', 'RIGHT_PAREN',
     ]
 
     t_SEMICOLON = r';'
+
+    t_EQUAL = r'='
+
     t_LEFT_PAREN = r'\('
     t_RIGHT_PAREN = r'\)'
     t_LEFT_BRACE = r'\{'
@@ -165,6 +169,13 @@ class Variable(object):
         else:
             return self.layout_qualifier in ('varying', 'out')
 
+class Assignment(object):
+
+    def __init__(self, operator, lvalue, rvalue):
+        self.operator = operator
+        self.lvalue = lvalue
+        self.rvalue = rvalue
+
 class FunctionPrototype(object):
 
     def __init__(self, name, return_type, parameters=[]):
@@ -176,7 +187,7 @@ class FunctionDefinition(object):
 
     def __init__(self, function_prototype, statements):
         self.function_prototype = function_prototype
-        self.statements = statements
+        self.statements = statements if statements else []
 
     @property
     def name(self):
@@ -195,6 +206,13 @@ class ShaderParser(object):
     def __init__(self, debug=False):
         self.lexer = ShaderLexer()
         self.tokens = self.lexer.tokens
+
+        rules_with_opt = [
+            'statement_list',
+        ]
+        for rule in rules_with_opt:
+            self._create_opt_rule(rule)
+
         self.parser = yacc.yacc(module=self,
             start='translation_unit_or_empty',
             debug=debug)
@@ -207,6 +225,20 @@ class ShaderParser(object):
         self.default_precision_qualifier = {}
 
         self.function_definitions = {}
+
+    def _create_opt_rule(self, rulename):
+        """ Given a rule name, creates an optional ply.yacc rule
+            for it. The name of the optional rule is
+            <rulename>_opt
+        """
+        optname = rulename + '_opt'
+
+        def optrule(self, p):
+            p[0] = p[1]
+
+        optrule.__doc__ = '%s : empty\n| %s' % (optname, rulename)
+        optrule.__name__ = 'p_%s' % optname
+        setattr(self.__class__, optrule.__name__, optrule)
 
     def p_translation_unit_or_empty(self, p):
         ''' translation_unit_or_empty : translation_unit
@@ -243,9 +275,28 @@ class ShaderParser(object):
         p[0] = FunctionPrototype(name=p[2], return_type=p[1])
 
     def p_compound_statement(self, p):
-        ''' compound_statement : LEFT_BRACE RIGHT_BRACE
+        ''' compound_statement : LEFT_BRACE statement_list_opt RIGHT_BRACE
         '''
-        p[0] = []
+        p[0] = p[2]
+
+    def p_statement_list(self, p):
+        ''' statement_list : statement
+                           | statement_list statement
+        '''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[2]]
+
+    def p_statement(self, p):
+        ''' statement : assignment_expression SEMICOLON
+        '''
+        p[0] = p[1]
+
+    def p_assignment_expression(self, p):
+        ''' assignment_expression : IDENTIFIER assignment_operator IDENTIFIER
+        '''
+        p[0] = Assignment(p[2], p[1], p[3])
 
     def p_declaration(self, p):
         ''' declaration : declaration_body SEMICOLON
@@ -334,6 +385,11 @@ class ShaderParser(object):
                            | USAMPLER2DARRAY
                            | USAMPLER3D
                            | USAMPLERCUBE
+        '''
+        p[0] = p[1]
+
+    def p_assignment_operator(self, p):
+        ''' assignment_operator : EQUAL
         '''
         p[0] = p[1]
 

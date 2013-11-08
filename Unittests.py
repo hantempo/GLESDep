@@ -169,6 +169,35 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertTrue('main' in sp.function_definitions)
         self.assertEqual(sp.function_definitions['main'].return_type, 'void')
         self.assertEqual(sp.function_definitions['main'].parameters, [])
+        self.assertEqual(sp.function_definitions['main'].statements, [])
+
+    def test_function_definition(self):
+        sp = ShaderParser()
+        sp.parse('''
+        attribute vec3 vertex;
+        uniform mat4 mvp;
+        void main()
+        {
+            gl_Position = vertex;
+        }
+        ''', fragment_shader=False)
+        self.assertEqual(sp.version, 100)
+
+        self.assertTrue('vertex' in sp.input_variables)
+        self.assertEqual(sp.input_variables['vertex'].type, 'vec3')
+        self.assertEqual(sp.input_variables['vertex'].layout_qualifier, 'attribute')
+        self.assertEqual(sp.input_variables['vertex'].precision_qualifier, 'highp')
+
+        self.assertTrue('mvp' in sp.uniform_variables)
+        self.assertEqual(sp.uniform_variables['mvp'].type, 'mat4')
+        self.assertEqual(sp.uniform_variables['mvp'].layout_qualifier, 'uniform')
+        self.assertEqual(sp.uniform_variables['mvp'].precision_qualifier, 'highp')
+
+        self.assertEqual(len(sp.function_definitions), 1)
+        self.assertTrue('main' in sp.function_definitions)
+        self.assertEqual(sp.function_definitions['main'].return_type, 'void')
+        self.assertEqual(sp.function_definitions['main'].parameters, [])
+        self.assertEqual(len(sp.function_definitions['main'].statements), 1)
 
 if __name__ == '__main__':
     import logging
