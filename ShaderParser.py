@@ -195,12 +195,12 @@ class ShaderParser(object):
         p[0] = FunctionDefinition(function_prototype=p[1], statements=p[2])
 
     def p_function_prototype(self, p):
-        ''' function_prototype : type_specifier IDENTIFIER LEFT_PAREN RIGHT_PAREN
+        ''' function_prototype : type_specifier IDENTIFIER LPAREN RPAREN
         '''
         p[0] = FunctionPrototype(name=p[2], return_type=p[1])
 
     def p_compound_statement(self, p):
-        ''' compound_statement : LEFT_BRACE statement_list_opt RIGHT_BRACE
+        ''' compound_statement : LBRACE statement_list_opt RBRACE
         '''
         p[0] = p[2]
 
@@ -214,7 +214,7 @@ class ShaderParser(object):
             p[0] = p[1] + [p[2]]
 
     def p_statement(self, p):
-        ''' statement : assignment_expression SEMICOLON
+        ''' statement : assignment_expression SEMI
         '''
         p[0] = p[1]
 
@@ -228,7 +228,7 @@ class ShaderParser(object):
 
     def p_multiplicative_expression(self, p):
         ''' multiplicative_expression : unary_expression
-                                      | multiplicative_expression STAR unary_expression
+                                      | multiplicative_expression TIMES unary_expression
         '''
         p[0] = p[1]
 
@@ -242,7 +242,7 @@ class ShaderParser(object):
             p[0] = Assignment(p[2], p[1], p[3])
 
     def p_declaration(self, p):
-        ''' declaration : declaration_body SEMICOLON
+        ''' declaration : declaration_body SEMI
         '''
         p[0] = p[1]
 
@@ -332,7 +332,7 @@ class ShaderParser(object):
         p[0] = p[1]
 
     def p_assignment_operator(self, p):
-        ''' assignment_operator : EQUAL
+        ''' assignment_operator : EQUALS
         '''
         p[0] = p[1]
 

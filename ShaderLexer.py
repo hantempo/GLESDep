@@ -19,6 +19,10 @@ class ShaderLexer(object):
         self.lexer.lineno = 1
 
     keywords = (
+        'const', 'struct',
+        # jumps
+        'break', 'continue', 'do', 'else', 'for', 'if', 'discard',
+        'return', 'switch', 'case', 'default', 'while',
         # types
         'void', 'bool', 'int', 'uint', 'float',
         'vec2', 'vec3', 'vec4',
@@ -34,7 +38,8 @@ class ShaderLexer(object):
         'isampler2D', 'isampler2DArray', 'isampler3D', 'isamplerCube',
         'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube',
         # layout qualifiers
-        'varying', 'uniform', 'attribute', 'in', 'out',
+        'varying', 'uniform', 'attribute', 'in', 'out', 'inout',
+        'centroid', 'flat', 'smooth', 'layout', 'invariant',
         # precision qualifiers
         'precision', 'lowp', 'mediump', 'highp',
     )
@@ -42,32 +47,96 @@ class ShaderLexer(object):
 
     tokens = keywords_mapping.values() + [
         'IDENTIFIER',
-        #'COMMENT',
-        # multiplicative operators
-        'STAR',
-        # assignment operators
-        'EQUAL',
-        'SEMICOLON',
-        'LEFT_BRACE', 'RIGHT_BRACE',
-        'LEFT_PAREN', 'RIGHT_PAREN',
         # literal
         'INT_CONSTANT', 'FLOAT_CONSTANT', 'BOOL_CONSTANT',
+        #'UINT_CONSTANT',
+
+        # Operators (+,-,*,/,%,|,&,~,^,<<,>>, ||, &&, !, <, <=, >, >=, ==, !=)
+        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO',
+        'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
+        'LOR', 'LAND', 'LNOT',
+        'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
+
+        # Assignment (=, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=)
+        'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL', 'PLUSEQUAL', 'MINUSEQUAL',
+        'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL', 'OREQUAL',
+
+        # Increment/decrement (++,--)
+        'PLUSPLUS', 'MINUSMINUS',
+
+        # Structure dereference (->)
+        'ARROW',
+
+        # Ternary operator (?)
+        'TERNARY',
+
+        # Delimeters ( ) [ ] { } , . ; :
+        'LPAREN', 'RPAREN',
+        'LBRACKET', 'RBRACKET',
+        'LBRACE', 'RBRACE',
+        'COMMA', 'PERIOD', 'SEMI', 'COLON',
     ]
 
-    t_SEMICOLON = r';'
+    # Operators
+    t_PLUS             = r'\+'
+    t_MINUS            = r'-'
+    t_TIMES            = r'\*'
+    t_DIVIDE           = r'/'
+    t_MODULO           = r'%'
+    t_OR               = r'\|'
+    t_AND              = r'&'
+    t_NOT              = r'~'
+    t_XOR              = r'\^'
+    t_LSHIFT           = r'<<'
+    t_RSHIFT           = r'>>'
+    t_LOR              = r'\|\|'
+    t_LAND             = r'&&'
+    t_LNOT             = r'!'
+    t_LT               = r'<'
+    t_GT               = r'>'
+    t_LE               = r'<='
+    t_GE               = r'>='
+    t_EQ               = r'=='
+    t_NE               = r'!='
 
-    # multiplicative operators
-    t_STAR = r'\*'
+    # Assignment operators
 
-    # assignment operators
-    t_EQUAL = r'='
+    t_EQUALS           = r'='
+    t_TIMESEQUAL       = r'\*='
+    t_DIVEQUAL         = r'/='
+    t_MODEQUAL         = r'%='
+    t_PLUSEQUAL        = r'\+='
+    t_MINUSEQUAL       = r'-='
+    t_LSHIFTEQUAL      = r'<<='
+    t_RSHIFTEQUAL      = r'>>='
+    t_ANDEQUAL         = r'&='
+    t_OREQUAL          = r'\|='
+    t_XOREQUAL         = r'^='
 
-    t_LEFT_PAREN = r'\('
-    t_RIGHT_PAREN = r'\)'
-    t_LEFT_BRACE = r'\{'
-    t_RIGHT_BRACE = r'\}'
+    # Increment/decrement
+    t_PLUSPLUS         = r'\+\+'
+    t_MINUSMINUS       = r'--'
+
+    # ->
+    t_ARROW            = r'->'
+
+    # ?
+    t_TERNARY          = r'\?'
+
+    # Delimeters
+    t_LPAREN           = r'\('
+    t_RPAREN           = r'\)'
+    t_LBRACKET         = r'\['
+    t_RBRACKET         = r'\]'
+    t_LBRACE           = r'\{'
+    t_RBRACE           = r'\}'
+    t_COMMA            = r','
+    t_PERIOD           = r'\.'
+    t_SEMI             = r';'
+    t_COLON            = r':'
 
     t_INT_CONSTANT = r'\d+([uU]|[lL]|[uU][lL]|[lL][uU])?'
+    #t_UINT_CONSTANT = r''
     t_FLOAT_CONSTANT = r'((\d+)(\.\d+)(e(\+|-)?(\d+))? | (\d+)e(\+|-)?(\d+))([lL]|[fF])?'
     t_BOOL_CONSTANT = r'true|false'
 
