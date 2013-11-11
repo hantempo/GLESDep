@@ -86,12 +86,12 @@ class Variable(object):
         else:
             return self.layout_qualifier in ('varying', 'out')
 
-class Assignment(object):
+#class Assignment(object):
 
-    def __init__(self, operator, lvalue, rvalue):
-        self.operator = operator
-        self.lvalue = lvalue
-        self.rvalue = rvalue
+    #def __init__(self, operator, lvalue, rvalue):
+        #self.operator = operator
+        #self.lvalue = lvalue
+        #self.rvalue = rvalue
 
 class FunctionPrototype(object):
 
@@ -157,44 +157,55 @@ class ShaderParser(object):
         optrule.__name__ = 'p_%s' % optname
         setattr(self.__class__, optrule.__name__, optrule)
 
-    def p_translation_unit_or_empty(self, p):
-        ''' translation_unit_or_empty : translation_unit
-                                      | empty
-        '''
-        if p[1] == None:
-            p[0] = []
-        else:
-            p[0] = p[1]
+    precedence = (
+        ('right', 'EQUALS'),
+        ('left', 'PLUS', 'MINUS'),
+        ('left', 'TIMES', 'DIVIDE'),
+    )
 
-    def p_translation_unit(self, p):
-        ''' translation_unit : external_declaration
-                             | translation_unit external_declaration
+    def p_primary_expression(self, p):
+        ''' primary_expression : IDENTIFIER
+                               | INT_CONSTANT
+                               | FLOAT_CONSTANT
+                               | BOOL_CONSTANT
+                               | LPAREN expression RPAREN
         '''
-        if len(p) == 2:
-            p[0] = [p[1]]
-        else:
-            p[0] = p[1] + [p[2]]
+        p[0] = p[1] if len(p) == 2 else p[2]
 
-    def p_external_declaration(self, p):
-        ''' external_declaration : function_definition
-                                 | declaration
+    def p_postfix_expression(self, p):
+        ''' postfix_expression : primary_expression
         '''
         p[0] = p[1]
 
-    def p_function_definition(self, p):
-        ''' function_definition : function_prototype compound_statement
+    def p_unary_expression(self, p):
+        ''' unary_expression : postfix_expression
         '''
-        p[0] = FunctionDefinition(function_prototype=p[1], statements=p[2])
+        p[0] = p[1]
 
-    def p_function_prototype(self, p):
-        ''' function_prototype : type_specifier IDENTIFIER LPAREN RPAREN
+    def p_binary_expression(self, p):
+        ''' binary_expression : unary_expression
+                              | binary_expression PLUS binary_expression
+                              | binary_expression MINUS binary_expression
+                              | binary_expression TIMES binary_expression
+                              | binary_expression DIVIDE binary_expression
         '''
-        p[0] = FunctionPrototype(name=p[2], return_type=p[1])
+        p[0] = p[1] if len(p) == 2 else (p[2], p[1], p[3])
 
-    def p_compound_statement(self, p):
-        ''' compound_statement : LBRACE statement_list_opt RBRACE
+    def p_assignment_expression(self, p):
+        ''' assignment_expression : binary_expression
+                                  | unary_expression assignment_operator assignment_expression
         '''
-        p[0] = p[2]
+        p[0] = p[1] if len(p) == 2 else (p[2], p[1], p[3])
+
+    def p_expression(self, p):
+        ''' expression : assignment_expression
+        '''
+        p[0] = p[1]
+
+    def p_statement(self, p):
+        ''' statement : expression SEMI
+        '''
+        p[0] = p[1]
 
     def p_statement_list(self, p):
         ''' statement_list : statement
@@ -205,33 +216,44 @@ class ShaderParser(object):
         else:
             p[0] = p[1] + [p[2]]
 
-    def p_statement(self, p):
-        ''' statement : assignment_expression SEMI
+    def p_compound_statement(self, p):
+        ''' compound_statement : LBRACE statement_list_opt RBRACE
+        '''
+        p[0] = p[2]
+
+    def p_function_prototype(self, p):
+        ''' function_prototype : type_specifier IDENTIFIER LPAREN RPAREN
+        '''
+        p[0] = FunctionPrototype(name=p[2], return_type=p[1])
+
+    def p_function_definition(self, p):
+        ''' function_definition : function_prototype compound_statement
+        '''
+        p[0] = FunctionDefinition(function_prototype=p[1], statements=p[2])
+
+    def p_external_declaration(self, p):
+        ''' external_declaration : function_definition
+                                 | declaration
         '''
         p[0] = p[1]
 
-    def p_unary_expression(self, p):
-        ''' unary_expression : IDENTIFIER
-                             | INT_CONSTANT
-                             | FLOAT_CONSTANT
-                             | BOOL_CONSTANT
-        '''
-        p[0] = p[1]
-
-    def p_multiplicative_expression(self, p):
-        ''' multiplicative_expression : unary_expression
-                                      | multiplicative_expression TIMES unary_expression
-        '''
-        p[0] = p[1]
-
-    def p_assignment_expression(self, p):
-        ''' assignment_expression : multiplicative_expression
-                                  | unary_expression assignment_operator assignment_expression
+    def p_translation_unit(self, p):
+        ''' translation_unit : external_declaration
+                             | translation_unit external_declaration
         '''
         if len(p) == 2:
-            p[0] = p[1]
+            p[0] = [p[1]]
         else:
-            p[0] = Assignment(p[2], p[1], p[3])
+            p[0] = p[1] + [p[2]]
+
+    def p_translation_unit_or_empty(self, p):
+        ''' translation_unit_or_empty : translation_unit
+                                      | empty
+        '''
+        if p[1] == None:
+            p[0] = []
+        else:
+            p[0] = p[1]
 
     def p_declaration(self, p):
         ''' declaration : declaration_body SEMI

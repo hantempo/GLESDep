@@ -178,9 +178,10 @@ class TestFunctionDefinition(unittest.TestCase):
         uniform mat4 mvp;
         void main()
         {
-            gl_Position = 2 * mvp * vertex;
+            gl_Position = 2 + mvp * vertex;
+            gl_Position = (2 + mvp) * vertex;
         }
-        ''', fragment_shader=False)
+        ''', fragment_shader=False, debug=False)
         self.assertEqual(sp.version, 100)
 
         self.assertTrue('vertex' in sp.input_variables)
@@ -197,7 +198,12 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertTrue('main' in sp.function_definitions)
         self.assertEqual(sp.function_definitions['main'].return_type, 'void')
         self.assertEqual(sp.function_definitions['main'].parameters, [])
-        self.assertEqual(len(sp.function_definitions['main'].statements), 1)
+
+        self.assertEqual(len(sp.function_definitions['main'].statements), 2)
+        self.assertEqual(sp.function_definitions['main'].statements[0],
+                ('=', 'gl_Position', ('+', '2', ('*', 'mvp', 'vertex'))))
+        self.assertEqual(sp.function_definitions['main'].statements[1],
+                ('=', 'gl_Position', ('*', ('+', '2', 'mvp'), 'vertex')))
 
 if __name__ == '__main__':
     import logging
