@@ -55,14 +55,6 @@ def is_sampler_type(type):
         'isampler2D', 'isampler2DArray', 'isampler3D', 'isamplerCube',
         'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube')
 
-class ShaderParserException(Exception):
-    def __init__(self, linenum, msg):
-        self.linenum = linenum
-        self.message = msg
-
-    def __repr__(self):
-        return 'Shader Parser Exception [Line No.{0}] : {1}'.format(self.linenum, self.message)
-
 class PrecisionStatement(object):
 
     def __init__(self, precision_qualifier, type_specifier):
@@ -341,10 +333,7 @@ class ShaderParser(object):
         p[0] = None
 
     def p_error(self, p):
-        if p:
-            raise ShaderParserException(p.lineno, 'before: %s' % p.value)
-        else:
-            raise ShaderParserException(-1, 'at end of input')
+        logger.error('Parser error in line #%d before token %s' % (p.lineno, p.value))
 
     def parse(self, text, fragment_shader=True, filename='', debug=False):
         self.lexer.filename = filename
