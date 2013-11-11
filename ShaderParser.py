@@ -346,7 +346,7 @@ class ShaderParser(object):
         else:
             raise ShaderParserException(-1, 'at end of input')
 
-    def parse(self, text, fragment_shader=True, filename='', debuglevel=0):
+    def parse(self, text, fragment_shader=True, filename='', debug=False):
         self.lexer.filename = filename
         self.lexer.build()
         self.lexer.reset_lineno()
@@ -371,7 +371,7 @@ class ShaderParser(object):
 
         declaration_list = self.parser.parse(input=text,
             lexer=self.lexer,
-            debug=debuglevel)
+            debug=1 if debug else 0)
         for decal in declaration_list:
             if isinstance(decal, PrecisionStatement):
                 self.set_default_precision_qualifier(decal.type_specifier, decal.precision_qualifier)

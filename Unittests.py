@@ -37,8 +37,8 @@ class TestPreprocessor(unittest.TestCase):
 class TestShaderVariables(unittest.TestCase):
 
     def test_varying(self):
-        sp = ShaderParser()
-        sp.parse('\tvarying  ivec2 vTexCoord ;  ')
+        sp = ShaderParser(debug=False)
+        sp.parse('\tvarying  ivec2 vTexCoord ;  ', debug=False)
         self.assertEqual(sp.version, 100)
         self.assertEqual(len(sp.input_variables), 1)
         self.assertEqual(len(sp.output_variables), 0)
