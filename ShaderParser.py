@@ -387,6 +387,16 @@ class ShaderParser(object):
 
     def p_assignment_operator(self, p):
         ''' assignment_operator : EQUALS
+                                | TIMESEQUAL
+                                | DIVEQUAL
+                                | MODEQUAL
+                                | PLUSEQUAL
+                                | MINUSEQUAL
+                                | LSHIFTEQUAL
+                                | RSHIFTEQUAL
+                                | ANDEQUAL
+                                | XOREQUAL
+                                | OREQUAL
         '''
         p[0] = p[1]
 
