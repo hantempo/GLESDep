@@ -171,7 +171,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(sp.function_definitions['main'].parameters, [])
         self.assertEqual(sp.function_definitions['main'].statements, [])
 
-    def test_function_definition(self):
+    def test_function_definition1(self):
         sp = ShaderParser()
         sp.parse('''
         attribute vec3 vertex;
@@ -200,10 +200,46 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(sp.function_definitions['main'].parameters, [])
 
         self.assertEqual(len(sp.function_definitions['main'].statements), 2)
-        self.assertEqual(sp.function_definitions['main'].statements[0],
-                ('=', 'gl_Position', ('+', '2', ('*', 'mvp', 'vertex'))))
-        self.assertEqual(sp.function_definitions['main'].statements[1],
-                ('=', 'gl_Position', ('*', ('+', '2', 'mvp'), 'vertex')))
+        self.assertEqual(str(sp.function_definitions['main'].statements[0]),
+                'gl_Position = (2 + (mvp * vertex))')
+        self.assertEqual(str(sp.function_definitions['main'].statements[1]),
+                'gl_Position = ((2 + mvp) * vertex)')
+
+    def test_function_definition2(self):
+        sp = ShaderParser()
+        sp.parse('''
+        #ifdef GL_ES
+        precision mediump float;
+        #endif
+        uniform sampler2D texChars;
+        varying vec2 vTexCoord;
+        void main()
+        {
+            gl_FragColor = texture2D(texChars, vTexCoord);
+        }
+        ''', fragment_shader=True, debug=False)
+        self.assertEqual(sp.version, 100)
+
+        self.assertEqual(len(sp.input_variables), 1)
+        self.assertTrue('vTexCoord' in sp.input_variables)
+        self.assertEqual(sp.input_variables['vTexCoord'].type, 'vec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
+        self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
+
+        self.assertEqual(len(sp.uniform_variables), 1)
+        self.assertTrue('texChars' in sp.uniform_variables)
+        self.assertEqual(sp.uniform_variables['texChars'].type, 'sampler2D')
+        self.assertEqual(sp.uniform_variables['texChars'].layout_qualifier, 'uniform')
+        self.assertEqual(sp.uniform_variables['texChars'].precision_qualifier, 'lowp')
+
+        self.assertEqual(len(sp.function_definitions), 1)
+        self.assertTrue('main' in sp.function_definitions)
+        fun_def = sp.function_definitions['main']
+        self.assertEqual(fun_def.return_type, 'void')
+        self.assertEqual(fun_def.parameters, [])
+
+        self.assertEqual(len(fun_def.statements), 1)
+        self.assertEqual(str(fun_def.statements[0]), 'gl_FragColor = texture2D(texChars, vTexCoord)')
 
 if __name__ == '__main__':
     import logging

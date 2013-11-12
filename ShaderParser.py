@@ -118,6 +118,35 @@ class FunctionDefinition(object):
     def parameters(self):
         return self.function_prototype.parameters
 
+class FunctionCall(object):
+
+    def __init__(self, name, arguments):
+        self.name = name
+        self.arguments = arguments
+
+    def __repr__(self):
+        return '%s(%s)' % (self.name, ', '.join(self.arguments))
+
+class BinaryExpression(object):
+
+    def __init__(self, op, left, right):
+        self.op = op
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return '(%s %s %s)' % (self.left, self.op, self.right)
+
+class AssignmentExpression(object):
+
+    def __init__(self, op, left, right):
+        self.op = op
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return '%s %s %s' % (self.left, self.op, self.right)
+
 class ShaderParser(object):
 
     def __init__(self, debug=False):
@@ -172,10 +201,21 @@ class ShaderParser(object):
         '''
         p[0] = p[1] if len(p) == 2 else p[2]
 
-    def p_postfix_expression(self, p):
+    def p_argument_expression_list(self, p):
+        ''' argument_expression_list : assignment_expression
+                                     | argument_expression_list COMMA assignment_expression
+        '''
+        p[0] = [p[1]] if len(p) == 2 else (p[1] + [p[3]])
+
+    def p_postfix_expression1(self, p):
         ''' postfix_expression : primary_expression
         '''
         p[0] = p[1]
+
+    def p_postfix_expression2(self, p):
+        ''' postfix_expression : postfix_expression LPAREN argument_expression_list RPAREN
+        '''
+        p[0] = FunctionCall(name=p[1], arguments=p[3])
 
     def p_unary_expression(self, p):
         ''' unary_expression : postfix_expression
@@ -189,13 +229,13 @@ class ShaderParser(object):
                               | binary_expression TIMES binary_expression
                               | binary_expression DIVIDE binary_expression
         '''
-        p[0] = p[1] if len(p) == 2 else (p[2], p[1], p[3])
+        p[0] = p[1] if len(p) == 2 else BinaryExpression(p[2], p[1], p[3])
 
     def p_assignment_expression(self, p):
         ''' assignment_expression : binary_expression
                                   | unary_expression assignment_operator assignment_expression
         '''
-        p[0] = p[1] if len(p) == 2 else (p[2], p[1], p[3])
+        p[0] = p[1] if len(p) == 2 else AssignmentExpression(p[2], p[1], p[3])
 
     def p_expression(self, p):
         ''' expression : assignment_expression
