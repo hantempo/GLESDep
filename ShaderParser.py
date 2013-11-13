@@ -105,6 +105,9 @@ class FunctionPrototype(object):
         self.return_type = return_type
         self.parameters = parameters
 
+    def __repr__(self):
+        return '%s %s()' % (self.return_type, self.name)
+
 class FunctionDefinition(object):
 
     def __init__(self, function_prototype, statements):
@@ -122,6 +125,13 @@ class FunctionDefinition(object):
     @property
     def parameters(self):
         return self.function_prototype.parameters
+
+    def __repr__(self):
+        lines = [str(self.function_prototype)]
+        lines.append('{')
+        lines += map(lambda stat : '    %s;' % stat, self.statements)
+        lines.append('}')
+        return '\n'.join(lines)
 
 class FunctionCall(object):
 
@@ -158,8 +168,7 @@ class ShaderParser(object):
         self.lexer = ShaderLexer.ShaderLexer()
         self.tokens = self.lexer.tokens
 
-        rules_with_opt = [
-            'statement_list',
+        rules_with_opt = [ 'statement_list',
         ]
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
@@ -176,6 +185,12 @@ class ShaderParser(object):
         self.default_precision_qualifier = {}
 
         self.function_definitions = {}
+
+    def to_str(self):
+        global_variables = self.uniform_variables.values() + \
+            self.input_variables.values() + self.output_variables.values()
+        return '\n'.join(map(lambda var : str(var) + ';', global_variables) +
+            map(lambda d : str(d), self.function_definitions.values()))
 
     def _create_opt_rule(self, rulename):
         """ Given a rule name, creates an optional ply.yacc rule

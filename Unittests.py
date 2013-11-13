@@ -9,10 +9,14 @@ class TestPreprocessor(unittest.TestCase):
         sp.parse('')
         self.assertEqual(sp.version, 100)
 
+        self.assertEqual(sp.to_str(), '')
+
     def test_version_300(self):
         sp = ShaderParser()
         sp.parse('  \t #version 300  es')
         self.assertEqual(sp.version, 300)
+
+        self.assertEqual(sp.to_str(), '')
 
     def test_gl_es(self):
         # GL_ES is a predefined macro
@@ -34,6 +38,8 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(sp.input_variables['texture_unit0'].layout_qualifier, 'varying')
         self.assertEqual(sp.input_variables['texture_unit0'].precision_qualifier, 'lowp')
 
+        self.assertEqual(sp.to_str(), 'varying lowp samplerCube texture_unit0;')
+
 class TestShaderVariables(unittest.TestCase):
 
     def test_varying(self):
@@ -48,6 +54,8 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.input_variables['vTexCoord'].type, 'ivec2')
         self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
         self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
+
+        self.assertEqual(sp.to_str(), 'varying mediump ivec2 vTexCoord;')
 
     def test_io_variables(self):
         sp = ShaderParser()
@@ -74,6 +82,8 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.uniform_variables['time'].type, 'float')
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'highp')
+
+        self.assertEqual(sp.to_str(), 'uniform highp float time;\nattribute highp vec3 fresnet;\nvarying highp ivec2 vTexCoord;')
 
     def test_precision(self):
         sp = ShaderParser()
@@ -170,6 +180,8 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(sp.function_definitions['main'].return_type, 'void')
         self.assertEqual(sp.function_definitions['main'].parameters, [])
         self.assertEqual(sp.function_definitions['main'].statements, [])
+
+        self.assertEqual(sp.to_str(), 'attribute highp vec3 vertex;\nvoid main()\n{\n}')
 
     def test_function_definition1(self):
         sp = ShaderParser()
