@@ -307,6 +307,8 @@ class TestFunctionDefinition(unittest.TestCase):
 	        {
 	        gl_FragColor = tex * vec4(fragmentColorVP, 1.0);
 	        }
+
+            if (tex.x == tex.y){if(tex.z==tex.w){}}
         }
         ''', fragment_shader=False, debug=False)
         self.assertEqual(len(sp.function_definitions), 1)
@@ -325,6 +327,12 @@ class TestFunctionDefinition(unittest.TestCase):
     else
     {
         gl_FragColor = tex * vec4(fragmentColorVP, 1.0);
+    }
+    if (tex.x == tex.y)
+    {
+        if (tex.z == tex.w)
+        {
+        }
     }
 }''')
 

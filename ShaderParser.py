@@ -346,6 +346,11 @@ class ShaderParser(object):
         p[0] = p[1]
 
     def p_selection_statement1(self, p):
+        ''' selection_statement : IF LPAREN expression RPAREN statement
+        '''
+        p[0] = IfStatement(p[3], p[5])
+
+    def p_selection_statement2(self, p):
         ''' selection_statement : IF LPAREN expression RPAREN statement ELSE statement
         '''
         p[0] = IfStatement(p[3], p[5], p[7])
