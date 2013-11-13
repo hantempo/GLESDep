@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+import collections
 from subprocess import Popen, PIPE
 from ply import yacc
 
@@ -91,12 +92,16 @@ class Variable(object):
         else:
             return self.layout_qualifier in ('varying', 'out')
 
-#class Assignment(object):
+class ParameterDeclaration(object):
 
-    #def __init__(self, operator, lvalue, rvalue):
-        #self.operator = operator
-        #self.lvalue = lvalue
-        #self.rvalue = rvalue
+    def __init__(self, type, name=None):
+        self.type = type
+        self.name = name
+
+    def __repr__(self):
+        tokens = [self.type]
+        if self.name: tokens.append(self.name)
+        return ' '.join(tokens)
 
 class FunctionPrototype(object):
 
@@ -106,7 +111,7 @@ class FunctionPrototype(object):
         self.parameters = parameters
 
     def __repr__(self):
-        return '%s %s()' % (self.return_type, self.name)
+        return '%s %s(%s)' % (self.return_type, self.name, ', '.join(map(lambda k:str(k), self.parameters)))
 
 class FunctionDefinition(object):
 
@@ -169,6 +174,7 @@ class ShaderParser(object):
         self.tokens = self.lexer.tokens
 
         rules_with_opt = [ 'statement_list',
+            'parameter_declaration_list',
         ]
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
@@ -178,9 +184,9 @@ class ShaderParser(object):
             debug=debug)
 
         self.version = 100
-        self.input_variables = {}
-        self.output_variables = {}
-        self.uniform_variables = {}
+        self.input_variables = collections.OrderedDict()
+        self.output_variables = collections.OrderedDict()
+        self.uniform_variables = collections.OrderedDict()
 
         self.default_precision_qualifier = {}
 
@@ -302,10 +308,26 @@ class ShaderParser(object):
         '''
         p[0] = p[2]
 
-    def p_function_prototype(self, p):
-        ''' function_prototype : type_specifier IDENTIFIER LPAREN RPAREN
+    def p_parameter_declaration1(self, p):
+        ''' parameter_declaration : type_specifier
         '''
-        p[0] = FunctionPrototype(name=p[2], return_type=p[1])
+        p[0] = ParameterDeclaration(type=p[1])
+
+    def p_parameter_declaration2(self, p):
+        ''' parameter_declaration : type_specifier IDENTIFIER
+        '''
+        p[0] = ParameterDeclaration(type=p[1], name=p[2])
+
+    def p_parameter_declaration_list(self, p):
+        ''' parameter_declaration_list : parameter_declaration
+                                       | parameter_declaration_list COMMA parameter_declaration
+        '''
+        p[0] = [p[1]] if len(p) == 2 else p[1] + [p[3]]
+
+    def p_function_prototype(self, p):
+        ''' function_prototype : type_specifier IDENTIFIER LPAREN parameter_declaration_list_opt RPAREN
+        '''
+        p[0] = FunctionPrototype(name=p[2], return_type=p[1], parameters=p[4])
 
     def p_function_definition(self, p):
         ''' function_definition : function_prototype compound_statement
@@ -443,7 +465,7 @@ class ShaderParser(object):
 
     def p_empty(self, p):
         ''' empty : '''
-        p[0] = None
+        p[0] = []
 
     def p_error(self, p):
         logger.error('Parser error in line #%d before token %s' % (p.lineno, p.value))
@@ -526,6 +548,8 @@ class ShaderParser(object):
             logger.error('Unexpected type-qualifier in default precision qualifier setting : "%s"' % type)
 
 if __name__ == '__main__':
+
+    logging.basicConfig(level=logging.INFO)
 
     import argparse
     parser = argparse.ArgumentParser()

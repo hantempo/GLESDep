@@ -225,7 +225,7 @@ class TestFunctionDefinition(unittest.TestCase):
         #endif
         uniform sampler2D texChars;
         varying vec2 vTexCoord;
-        void main()
+        void main(void)
         {
             gl_FragColor = texture2D(texChars, vTexCoord);
         }
@@ -248,10 +248,13 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertTrue('main' in sp.function_definitions)
         fun_def = sp.function_definitions['main']
         self.assertEqual(fun_def.return_type, 'void')
-        self.assertEqual(fun_def.parameters, [])
+        self.assertEqual(len(fun_def.parameters), 1)
+        self.assertEqual(str(fun_def.parameters[0]), 'void')
 
         self.assertEqual(len(fun_def.statements), 1)
         self.assertEqual(str(fun_def.statements[0]), 'gl_FragColor = texture2D(texChars, vTexCoord)')
+
+        self.assertEqual(str(fun_def), 'void main(void)\n{\n    gl_FragColor = texture2D(texChars, vTexCoord);\n}')
 
     def test_function_definition3(self):
         sp = ShaderParser()
@@ -261,7 +264,7 @@ class TestFunctionDefinition(unittest.TestCase):
         #endif
         attribute vec4 myVertex;
         varying vec2 vTexCoord;
-        void main()
+        void main(float v, int k)
         {
             gl_Position = vec4( -myVertex.y, myVertex.x, 0.,.2);
             vTexCoord = vec2(myVertex.zw);
@@ -281,7 +284,10 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertTrue('main' in sp.function_definitions)
         fun_def = sp.function_definitions['main']
         self.assertEqual(fun_def.return_type, 'void')
-        self.assertEqual(fun_def.parameters, [])
+        self.assertEqual(len(fun_def.parameters), 2)
+        self.assertEqual(str(fun_def.parameters[0]), 'float v')
+        self.assertEqual(str(fun_def.parameters[1]), 'int k')
+        self.assertEqual(str(fun_def.function_prototype), 'void main(float v, int k)')
 
         self.assertEqual(len(fun_def.statements), 2)
         self.assertEqual(str(fun_def.statements[0]), 'gl_Position = vec4(-myVertex.y, myVertex.x, 0., .2)')
