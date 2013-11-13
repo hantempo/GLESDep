@@ -251,7 +251,7 @@ class TestFunctionDefinition(unittest.TestCase):
         varying vec2 vTexCoord;
         void main()
         {
-            //gl_Position = vec4( -myVertex.y, myVertex.x, 0.,1.);
+            gl_Position = vec4( -myVertex.y, myVertex.x, 0.,.2);
             vTexCoord = vec2(myVertex.zw);
         }
         ''', fragment_shader=False, debug=False)
@@ -271,8 +271,9 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(fun_def.return_type, 'void')
         self.assertEqual(fun_def.parameters, [])
 
-        self.assertEqual(len(fun_def.statements), 1)
-        self.assertEqual(str(fun_def.statements[0]), 'vTexCoord = vec2(myVertex.zw)')
+        self.assertEqual(len(fun_def.statements), 2)
+        self.assertEqual(str(fun_def.statements[0]), 'gl_Position = vec4(-myVertex.y, myVertex.x, 0., .2)')
+        self.assertEqual(str(fun_def.statements[1]), 'vTexCoord = vec2(myVertex.zw)')
 
 if __name__ == '__main__':
     import logging

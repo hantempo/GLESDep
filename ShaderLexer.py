@@ -135,10 +135,14 @@ class ShaderLexer(object):
     t_SEMI             = r';'
     t_COLON            = r':'
 
+    t_BOOL_CONSTANT = r'true|false'
     t_INT_CONSTANT = r'\d+([uU]|[lL]|[uU][lL]|[lL][uU])?'
     #t_UINT_CONSTANT = r''
-    t_FLOAT_CONSTANT = r'((\d+)(\.\d+)(e(\+|-)?(\d+))? | (\d+)e(\+|-)?(\d+))([lL]|[fF])?'
-    t_BOOL_CONSTANT = r'true|false'
+
+    # possible candidate to match : '2.', '.2'
+    exponent_part = r'([eE][-+]?[0-9]+)'
+    fractional_constant = r'((\d+)(\.\d*) | (\d*)(\.\d+))'
+    t_FLOAT_CONSTANT = '(((('+fractional_constant+')'+exponent_part+'?)|([0-9]+'+exponent_part+'))[FfLl]?)'
 
     t_ignore = ' \t'
 

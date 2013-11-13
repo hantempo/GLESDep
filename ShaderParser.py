@@ -228,8 +228,23 @@ class ShaderParser(object):
         '''
         p[0] = FunctionCall(name=p[1], arguments=p[3])
 
-    def p_unary_expression(self, p):
+    def p_unary_expression1(self, p):
         ''' unary_expression : postfix_expression
+        '''
+        p[0] = p[1]
+
+    def p_unary_expression2(self, p):
+        ''' unary_expression : unary_operator unary_expression
+        '''
+        p[0] = p[1] + p[2]
+
+    def p_unary_operator(self, p):
+        ''' unary_operator : AND
+                           | TIMES
+                           | PLUS
+                           | MINUS
+                           | NOT
+                           | LNOT
         '''
         p[0] = p[1]
 
