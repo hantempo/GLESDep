@@ -241,6 +241,39 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(len(fun_def.statements), 1)
         self.assertEqual(str(fun_def.statements[0]), 'gl_FragColor = texture2D(texChars, vTexCoord)')
 
+    def test_function_definition3(self):
+        sp = ShaderParser()
+        sp.parse('''
+        #ifdef GL_ES
+        precision highp float;
+        #endif
+        attribute vec4 myVertex;
+        varying vec2 vTexCoord;
+        void main()
+        {
+            //gl_Position = vec4( -myVertex.y, myVertex.x, 0.,1.);
+            vTexCoord = vec2(myVertex.zw);
+        }
+        ''', fragment_shader=False, debug=False)
+        self.assertEqual(sp.version, 100)
+
+        self.assertEqual(len(sp.input_variables), 1)
+        self.assertTrue('myVertex' in sp.input_variables)
+        self.assertEqual(str(sp.input_variables['myVertex']), 'attribute highp vec4 myVertex')
+
+        self.assertEqual(len(sp.output_variables), 1)
+        self.assertTrue('vTexCoord' in sp.output_variables)
+        self.assertEqual(str(sp.output_variables['vTexCoord']), 'varying highp vec2 vTexCoord')
+
+        self.assertEqual(len(sp.function_definitions), 1)
+        self.assertTrue('main' in sp.function_definitions)
+        fun_def = sp.function_definitions['main']
+        self.assertEqual(fun_def.return_type, 'void')
+        self.assertEqual(fun_def.parameters, [])
+
+        self.assertEqual(len(fun_def.statements), 1)
+        self.assertEqual(str(fun_def.statements[0]), 'vTexCoord = vec2(myVertex.zw)')
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)

@@ -74,7 +74,7 @@ class ShaderLexer(object):
         'LPAREN', 'RPAREN',
         'LBRACKET', 'RBRACKET',
         'LBRACE', 'RBRACE',
-        'COMMA', 'PERIOD', 'SEMI', 'COLON',
+        'COMMA', 'DOT', 'SEMI', 'COLON',
     ]
 
     # Operators
@@ -131,7 +131,7 @@ class ShaderLexer(object):
     t_LBRACE           = r'\{'
     t_RBRACE           = r'\}'
     t_COMMA            = r','
-    t_PERIOD           = r'\.'
+    t_DOT              = r'\.'
     t_SEMI             = r';'
     t_COLON            = r':'
 

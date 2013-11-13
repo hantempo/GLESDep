@@ -70,9 +70,14 @@ class Variable(object):
         self.precision_qualifier = precision_qualifier
 
     def __repr__(self):
-        return 'Shader variable : %s %s %s %s' % (
-            self.layout_qualifier, self.precision_qualifier,
-            self.type, self.name)
+        if self.layout_qualifier:
+            return '%s %s %s %s' % (
+                self.layout_qualifier, self.precision_qualifier,
+                self.type, self.name)
+        else:
+            return '%s %s %s' % (
+                self.precision_qualifier,
+                self.type, self.name)
 
     def is_input_variable(self, fragment_shader):
         if fragment_shader:
@@ -198,6 +203,7 @@ class ShaderParser(object):
                                | FLOAT_CONSTANT
                                | BOOL_CONSTANT
                                | LPAREN expression RPAREN
+                               | type_specifier
         '''
         p[0] = p[1] if len(p) == 2 else p[2]
 
@@ -213,6 +219,11 @@ class ShaderParser(object):
         p[0] = p[1]
 
     def p_postfix_expression2(self, p):
+        ''' postfix_expression : postfix_expression DOT IDENTIFIER
+        '''
+        p[0] = '.'.join([p[1], p[3]])
+
+    def p_postfix_expression3(self, p):
         ''' postfix_expression : postfix_expression LPAREN argument_expression_list RPAREN
         '''
         p[0] = FunctionCall(name=p[1], arguments=p[3])
