@@ -117,7 +117,7 @@ class FunctionDefinition(object):
 
     def __init__(self, function_prototype, statements):
         self.function_prototype = function_prototype
-        self.statements = statements if statements else []
+        self.statements = statements
 
     @property
     def name(self):
@@ -132,11 +132,7 @@ class FunctionDefinition(object):
         return self.function_prototype.parameters
 
     def __repr__(self):
-        lines = [str(self.function_prototype)]
-        lines.append('{')
-        lines += map(lambda stat : '    %s;' % stat, self.statements)
-        lines.append('}')
-        return '\n'.join(lines)
+        return '\n'.join([str(self.function_prototype), str(self.statements)])
 
 class FunctionCall(object):
 
@@ -155,7 +151,10 @@ class BinaryExpression(object):
         self.right = right
 
     def __repr__(self):
-        return '(%s %s %s)' % (self.left, self.op, self.right)
+        tokens = ['(%s)' % str(self.left) if isinstance(self.left, BinaryExpression) else str(self.left)]
+        tokens.append(str(self.op))
+        tokens.append('(%s)' % str(self.right) if isinstance(self.right, BinaryExpression) else str(self.right))
+        return ' '.join(tokens)
 
 class AssignmentExpression(object):
 
@@ -166,10 +165,41 @@ class AssignmentExpression(object):
         self.right = right
 
     def __repr__(self):
-        str = '%s %s %s' % (self.left, self.op, self.right)
+        str = '%s %s %s;' % (self.left, self.op, self.right)
         if self.left_type:
             str = self.left_type + ' ' + str
         return str
+
+class IfStatement(object):
+
+    def __init__(self, condition, if_true, if_false=None):
+        self.condition = condition
+        self.if_true = if_true
+        self.if_false = if_false
+
+    def __repr__(self):
+        lines = ['if (%s)' % str(self.condition)]
+        lines += str(self.if_true).splitlines()
+        if self.if_false:
+            lines += ['else']
+            lines += str(self.if_false).splitlines()
+        return '\n'.join(lines)
+
+class CompoundStatement(object):
+
+    def __init__(self, statements):
+        self.statements = statements
+
+    def __getitem__(self, index):
+        return self.statements[index]
+
+    def __repr__(self):
+        lines = []
+        lines.append('{')
+        for stat in self.statements:
+            lines += map(lambda l : ' '*4+l, str(stat).splitlines())
+        lines.append('}')
+        return '\n'.join(lines)
 
 class ShaderParser(object):
 
@@ -279,6 +309,17 @@ class ShaderParser(object):
                               | binary_expression MINUS binary_expression
                               | binary_expression TIMES binary_expression
                               | binary_expression DIVIDE binary_expression
+                              | binary_expression LT binary_expression
+                              | binary_expression LE binary_expression
+                              | binary_expression GT binary_expression
+                              | binary_expression GE binary_expression
+                              | binary_expression EQ binary_expression
+                              | binary_expression NE binary_expression
+                              | binary_expression OR binary_expression
+                              | binary_expression AND binary_expression
+                              | binary_expression XOR binary_expression
+                              | binary_expression LOR binary_expression
+                              | binary_expression LAND binary_expression
         '''
         p[0] = p[1] if len(p) == 2 else BinaryExpression(p[2], p[1], p[3])
 
@@ -299,8 +340,26 @@ class ShaderParser(object):
         else:
             p[0] = p[1]
 
+    def p_expression_statement(self, p):
+        ''' expression_statement : expression SEMI
+        '''
+        p[0] = p[1]
+
+    def p_selection_statement1(self, p):
+        ''' selection_statement : IF LPAREN expression RPAREN statement ELSE statement
+        '''
+        p[0] = IfStatement(p[3], p[5], p[7])
+
+    def p_jump_statement1(self, p):
+        ''' jump_statement : DISCARD SEMI
+        '''
+        p[0] = p[1] + ';'
+
     def p_statement(self, p):
-        ''' statement : expression SEMI
+        ''' statement : expression_statement
+                      | selection_statement
+                      | compound_statement
+                      | jump_statement
         '''
         p[0] = p[1]
 
@@ -316,7 +375,7 @@ class ShaderParser(object):
     def p_compound_statement(self, p):
         ''' compound_statement : LBRACE statement_list_opt RBRACE
         '''
-        p[0] = p[2]
+        p[0] = CompoundStatement(p[2])
 
     def p_parameter_declaration1(self, p):
         ''' parameter_declaration : type_specifier
