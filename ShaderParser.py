@@ -524,3 +524,18 @@ class ShaderParser(object):
             self.default_precision_qualifier[type] = precision_qualifier
         else:
             logger.error('Unexpected type-qualifier in default precision qualifier setting : "%s"' % type)
+
+if __name__ == '__main__':
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--vertex', action='store_true',
+            help='Specify this shader is a vertex shader')
+    parser.add_argument('input_shader')
+
+    args = parser.parse_args()
+
+    with open(args.input_shader) as f:
+        sp = ShaderParser()
+        sp.parse(f.read(), fragment_shader=not args.vertex)
+        print sp.to_str()
