@@ -293,6 +293,35 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(str(fun_def.statements[0]), 'gl_Position = vec4(-myVertex.y, myVertex.x, 0., .2)')
         self.assertEqual(str(fun_def.statements[1]), 'vTexCoord = vec2(myVertex.zw)')
 
+    def test_function_definition4(self):
+        sp = ShaderParser()
+        sp.parse('''
+        #ifdef GL_ES
+        precision mediump float;
+        #endif
+        varying vec2 texcoord0;
+        uniform sampler2D tex0;
+        uniform vec3 fragmentColorVP;
+        void main(void)
+        {
+	        vec4 tex = texture2D(tex0, texcoord0);
+	        /*if(tex.a < 0.5)
+	        {
+		        discard;
+	        }
+	        else
+	        {
+	        gl_FragColor = tex * vec4(fragmentColorVP, 1.0);
+	        }*/
+        }
+        ''', fragment_shader=False, debug=False)
+        self.assertEqual(len(sp.function_definitions), 1)
+        self.assertTrue('main' in sp.function_definitions)
+        fun_def = sp.function_definitions['main']
+
+        self.assertEqual(len(fun_def.statements), 1)
+        self.assertEqual(str(fun_def.statements[0]), 'vec4 tex = texture2D(tex0, texcoord0)')
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)

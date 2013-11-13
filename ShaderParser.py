@@ -162,10 +162,14 @@ class AssignmentExpression(object):
     def __init__(self, op, left, right):
         self.op = op
         self.left = left
+        self.left_type = None
         self.right = right
 
     def __repr__(self):
-        return '%s %s %s' % (self.left, self.op, self.right)
+        str = '%s %s %s' % (self.left, self.op, self.right)
+        if self.left_type:
+            str = self.left_type + ' ' + str
+        return str
 
 class ShaderParser(object):
 
@@ -286,8 +290,14 @@ class ShaderParser(object):
 
     def p_expression(self, p):
         ''' expression : assignment_expression
+                       | type_specifier assignment_expression
         '''
-        p[0] = p[1]
+        if len(p) == 3:
+            # declaration and assignment to variable in the same expression
+            p[2].left_type = p[1]
+            p[0] = p[2]
+        else:
+            p[0] = p[1]
 
     def p_statement(self, p):
         ''' statement : expression SEMI
