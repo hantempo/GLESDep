@@ -62,31 +62,37 @@ class PrecisionStatement(object):
         self.precision_qualifier = precision_qualifier
         self.type_specifier = type_specifier
 
-class Variable(object):
+class VariableDeclaration(object):
 
-    def __init__(self, type, name, layout_qualifier=None, precision_qualifier=None):
-        self.type = type
+    def __init__(self, name, type_specifier=None, layout_qualifier=None, precision_qualifier=None):
         self.name = name
+        self.type_specifier = type_specifier
         self.layout_qualifier = layout_qualifier
         self.precision_qualifier = precision_qualifier
+        self.initializer = None
 
     def __repr__(self):
-        if self.layout_qualifier:
-            return '%s %s %s %s' % (
-                self.layout_qualifier, self.precision_qualifier,
-                self.type, self.name)
-        else:
-            return '%s %s %s' % (
-                self.precision_qualifier,
-                self.type, self.name)
+        tokens = []
+        if self.layout_qualifier: tokens.append(self.layout_qualifier)
+        if self.precision_qualifier: tokens.append(self.precision_qualifier)
+        if self.type_specifier: tokens.append(self.type_specifier)
+        tokens.append(self.name)
+        if self.initializer:
+            tokens.append('=')
+            tokens.append(str(self.initializer))
+        return ' '.join(tokens)
 
     def is_input_variable(self, fragment_shader):
+        if not self.layout_qualifier:
+            return False
         if fragment_shader:
             return self.layout_qualifier in ('varying', 'in')
         else:
             return self.layout_qualifier in ('attribute', 'in')
 
     def is_output_variable(self, fragment_shader):
+        if not self.layout_qualifier:
+            return False
         if fragment_shader:
             return self.layout_qualifier in ('out')
         else:
@@ -218,6 +224,7 @@ class ShaderParser(object):
             debug=debug)
 
         self.version = 100
+        self.variable_declarations = collections.OrderedDict()
         self.input_variables = collections.OrderedDict()
         self.output_variables = collections.OrderedDict()
         self.uniform_variables = collections.OrderedDict()
@@ -227,9 +234,7 @@ class ShaderParser(object):
         self.function_definitions = {}
 
     def to_str(self):
-        global_variables = self.uniform_variables.values() + \
-            self.input_variables.values() + self.output_variables.values()
-        return '\n'.join(map(lambda var : str(var) + ';', global_variables) +
+        return '\n'.join(map(lambda var : str(var) + ';', self.variable_declarations.values()) +
             map(lambda d : str(d), self.function_definitions.values()))
 
     def _create_opt_rule(self, rulename):
@@ -437,26 +442,61 @@ class ShaderParser(object):
         '''
         p[0] = p[1]
 
-    def p_declaration_body(self, p):
-        ''' declaration_body : declaration_specifiers
+    def p_declaration_body1(self, p):
+        ''' declaration_body : PRECISION precision_qualifier type_specifier
+        '''
+        p[0] = PrecisionStatement(precision_qualifier=p[2], type_specifier=p[3])
+
+    def p_declaration_body2(self, p):
+        ''' declaration_body : type_specifier init_declarator_list
+        '''
+        for dec in p[2]:
+            dec.type_specifier = p[1]
+        p[0] = p[2]
+
+    def p_declaration_body3(self, p):
+        ''' declaration_body : layout_qualifier type_specifier init_declarator_list
+        '''
+        for dec in p[3]:
+            dec.layout_qualifier = p[1]
+            dec.type_specifier = p[2]
+        p[0] = p[3]
+
+    def p_declaration_body4(self, p):
+        ''' declaration_body : layout_qualifier precision_qualifier type_specifier init_declarator_list
+        '''
+        for dec in p[4]:
+            dec.layout_qualifier = p[1]
+            dec.precision_qualifier = p[2]
+            dec.type_specifier = p[3]
+        p[0] = p[4]
+
+    def p_init_declarator_list(self, p):
+        ''' init_declarator_list : init_declarator
+                                 | init_declarator_list COMMA init_declarator
+        '''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[2]]
+
+    def p_init_declarator(self, p):
+        ''' init_declarator : declarator
+                            | declarator EQUALS initializer
+        '''
+        if len(p) == 4:
+            p[1].initializer = p[3]
+        p[0] = p[1]
+
+    def p_initializer(self, p):
+        ''' initializer : assignment_expression
         '''
         p[0] = p[1]
 
-    def p_declaration_specifiers1(self, p):
-        ''' declaration_specifiers : layout_qualifier type_specifier IDENTIFIER
+    def p_declarator(self, p):
+        ''' declarator : IDENTIFIER
         '''
-        p[0] = Variable(type=p[2], name=p[3], layout_qualifier=p[1])
-
-    def p_declaration_specifiers2(self, p):
-        ''' declaration_specifiers : layout_qualifier precision_qualifier type_specifier IDENTIFIER
-        '''
-        p[0] = Variable(type=p[3], name=p[4], layout_qualifier=p[1], precision_qualifier=p[2])
-
-    # precision statement : set default precision qualifier for some type(s)
-    def p_declaration_specifiers3(self, p):
-        ''' declaration_specifiers : PRECISION precision_qualifier type_specifier
-        '''
-        p[0] = PrecisionStatement(precision_qualifier=p[2], type_specifier=p[3])
+        p[0] = VariableDeclaration(name=p[1])
 
     def p_layout_qualifier(self, p):
         ''' layout_qualifier : VARYING
@@ -567,28 +607,30 @@ class ShaderParser(object):
 
         logger.debug('Input after pre-processor : "%s"' % (text))
 
-        declaration_list = self.parser.parse(input=text,
+        external_declarations = self.parser.parse(input=text,
             lexer=self.lexer,
             debug=1 if debug else 0)
-        for decal in declaration_list:
+        for decal in external_declarations:
             if isinstance(decal, PrecisionStatement):
                 self.set_default_precision_qualifier(decal.type_specifier, decal.precision_qualifier)
-            elif isinstance(decal, Variable):
-                var = decal
-                # use default precision qualifier if equals None
-                if not var.precision_qualifier:
-                    var.precision_qualifier = self.get_default_precision_qualifier(var.type)
-                    if var.precision_qualifier == None:
-                        logger.error('Unexpected non-precision-qualified variable: "%s"' % str(var))
-
-                if var.is_input_variable(fragment_shader):
-                    self.input_variables[var.name] = var
-                elif var.is_output_variable(fragment_shader):
-                    self.output_variables[var.name] = var
-                elif var.layout_qualifier == 'uniform':
-                    self.uniform_variables[var.name] = var
             elif isinstance(decal, FunctionDefinition):
                 self.function_definitions[decal.name] = decal
+            elif isinstance(decal, list): # variable declaration come as a list
+                for var in decal:
+                    if isinstance(var, VariableDeclaration):
+                        # use default precision qualifier if equals None
+                        if not var.precision_qualifier:
+                            var.precision_qualifier = self.get_default_precision_qualifier(var.type_specifier)
+                            if var.precision_qualifier == None:
+                                logger.error('Unexpected non-precision-qualified variable: "%s"' % str(var))
+
+                        if var.is_input_variable(fragment_shader):
+                            self.input_variables[var.name] = var
+                        elif var.is_output_variable(fragment_shader):
+                            self.output_variables[var.name] = var
+                        elif var.layout_qualifier == 'uniform':
+                            self.uniform_variables[var.name] = var
+                        self.variable_declarations[var.name] = var
 
     def initialize_default_precision_qualifiers(self, is_fragment_shader):
         if is_fragment_shader:

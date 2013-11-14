@@ -34,7 +34,7 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(len(sp.output_variables), 0)
 
         self.assertTrue('texture_unit0' in sp.input_variables)
-        self.assertEqual(sp.input_variables['texture_unit0'].type, 'samplerCube')
+        self.assertEqual(sp.input_variables['texture_unit0'].type_specifier, 'samplerCube')
         self.assertEqual(sp.input_variables['texture_unit0'].layout_qualifier, 'varying')
         self.assertEqual(sp.input_variables['texture_unit0'].precision_qualifier, 'lowp')
 
@@ -51,7 +51,7 @@ class TestShaderVariables(unittest.TestCase):
 
         self.assertTrue('vTexCoord' in sp.input_variables)
         self.assertEqual(sp.input_variables['vTexCoord'].name, 'vTexCoord')
-        self.assertEqual(sp.input_variables['vTexCoord'].type, 'ivec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].type_specifier, 'ivec2')
         self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
         self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
 
@@ -69,21 +69,21 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(len(sp.output_variables), 1)
 
         self.assertTrue('fresnet' in sp.input_variables)
-        self.assertEqual(sp.input_variables['fresnet'].type, 'vec3')
+        self.assertEqual(sp.input_variables['fresnet'].type_specifier, 'vec3')
         self.assertEqual(sp.input_variables['fresnet'].layout_qualifier, 'attribute')
         self.assertEqual(sp.input_variables['fresnet'].precision_qualifier, 'highp')
 
         self.assertTrue('vTexCoord' in sp.output_variables)
-        self.assertEqual(sp.output_variables['vTexCoord'].type, 'ivec2')
+        self.assertEqual(sp.output_variables['vTexCoord'].type_specifier, 'ivec2')
         self.assertEqual(sp.output_variables['vTexCoord'].layout_qualifier, 'varying')
         self.assertEqual(sp.output_variables['vTexCoord'].precision_qualifier, 'highp')
 
         self.assertTrue('time' in sp.uniform_variables)
-        self.assertEqual(sp.uniform_variables['time'].type, 'float')
+        self.assertEqual(sp.uniform_variables['time'].type_specifier, 'float')
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'highp')
 
-        self.assertEqual(sp.to_str(), 'uniform highp float time;\nattribute highp vec3 fresnet;\nvarying highp ivec2 vTexCoord;')
+        self.assertEqual(sp.to_str(), 'attribute highp vec3 fresnet;\nuniform highp float time;\nvarying highp ivec2 vTexCoord;')
 
     def test_precision(self):
         sp = ShaderParser()
@@ -97,17 +97,17 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(len(sp.output_variables), 1)
 
         self.assertTrue('fresnet' in sp.input_variables)
-        self.assertEqual(sp.input_variables['fresnet'].type, 'vec3')
+        self.assertEqual(sp.input_variables['fresnet'].type_specifier, 'vec3')
         self.assertEqual(sp.input_variables['fresnet'].layout_qualifier, 'attribute')
         self.assertEqual(sp.input_variables['fresnet'].precision_qualifier, 'lowp')
 
         self.assertTrue('vTexCoord' in sp.output_variables)
-        self.assertEqual(sp.output_variables['vTexCoord'].type, 'vec2')
+        self.assertEqual(sp.output_variables['vTexCoord'].type_specifier, 'vec2')
         self.assertEqual(sp.output_variables['vTexCoord'].layout_qualifier, 'varying')
         self.assertEqual(sp.output_variables['vTexCoord'].precision_qualifier, 'highp')
 
         self.assertTrue('time' in sp.uniform_variables)
-        self.assertEqual(sp.uniform_variables['time'].type, 'float')
+        self.assertEqual(sp.uniform_variables['time'].type_specifier, 'float')
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'highp')
 
@@ -126,12 +126,12 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.version, 100)
 
         self.assertTrue('vTexCoord' in sp.input_variables)
-        self.assertEqual(sp.input_variables['vTexCoord'].type, 'uvec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].type_specifier, 'uvec2')
         self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
         self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
 
         self.assertTrue('time' in sp.uniform_variables)
-        self.assertEqual(sp.uniform_variables['time'].type, 'sampler2D')
+        self.assertEqual(sp.uniform_variables['time'].type_specifier, 'sampler2D')
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'lowp')
 
@@ -146,19 +146,30 @@ class TestShaderVariables(unittest.TestCase):
         self.assertEqual(sp.version, 300)
 
         self.assertTrue('vTexCoord' in sp.input_variables)
-        self.assertEqual(sp.input_variables['vTexCoord'].type, 'uvec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].type_specifier, 'uvec2')
         self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'in')
         self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
 
         self.assertTrue('time' in sp.uniform_variables)
-        self.assertEqual(sp.uniform_variables['time'].type, 'samplerCube')
+        self.assertEqual(sp.uniform_variables['time'].type_specifier, 'samplerCube')
         self.assertEqual(sp.uniform_variables['time'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['time'].precision_qualifier, 'mediump')
 
         self.assertTrue('space' in sp.output_variables)
-        self.assertEqual(sp.output_variables['space'].type, 'samplerCube')
+        self.assertEqual(sp.output_variables['space'].type_specifier, 'samplerCube')
         self.assertEqual(sp.output_variables['space'].layout_qualifier, 'out')
         self.assertEqual(sp.output_variables['space'].precision_qualifier, 'highp')
+
+    def test_global_variable_def(self):
+        sp = ShaderParser()
+        sp.parse('''precision highp float;vec2 wave0 = vec2( 1.01, 1.08);vec2 wave2 = vec2( -1.03, 1.03 );''', debug=False)
+
+        self.assertEqual(len(sp.input_variables), 0)
+        self.assertEqual(len(sp.output_variables), 0)
+        self.assertEqual(len(sp.uniform_variables), 0)
+        self.assertEqual(len(sp.function_definitions), 0)
+
+        self.assertEqual(sp.to_str(), 'highp vec2 wave0 = vec2(1.01, 1.08);\nhighp vec2 wave2 = vec2(-1.03, 1.03);')
 
 class TestFunctionDefinition(unittest.TestCase):
 
@@ -171,7 +182,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(sp.version, 100)
 
         self.assertTrue('vertex' in sp.input_variables)
-        self.assertEqual(sp.input_variables['vertex'].type, 'vec3')
+        self.assertEqual(sp.input_variables['vertex'].type_specifier, 'vec3')
         self.assertEqual(sp.input_variables['vertex'].layout_qualifier, 'attribute')
         self.assertEqual(sp.input_variables['vertex'].precision_qualifier, 'highp')
 
@@ -197,12 +208,12 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(sp.version, 100)
 
         self.assertTrue('vertex' in sp.input_variables)
-        self.assertEqual(sp.input_variables['vertex'].type, 'vec3')
+        self.assertEqual(sp.input_variables['vertex'].type_specifier, 'vec3')
         self.assertEqual(sp.input_variables['vertex'].layout_qualifier, 'attribute')
         self.assertEqual(sp.input_variables['vertex'].precision_qualifier, 'highp')
 
         self.assertTrue('mvp' in sp.uniform_variables)
-        self.assertEqual(sp.uniform_variables['mvp'].type, 'mat4')
+        self.assertEqual(sp.uniform_variables['mvp'].type_specifier, 'mat4')
         self.assertEqual(sp.uniform_variables['mvp'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['mvp'].precision_qualifier, 'highp')
 
@@ -231,13 +242,13 @@ class TestFunctionDefinition(unittest.TestCase):
 
         self.assertEqual(len(sp.input_variables), 1)
         self.assertTrue('vTexCoord' in sp.input_variables)
-        self.assertEqual(sp.input_variables['vTexCoord'].type, 'vec2')
+        self.assertEqual(sp.input_variables['vTexCoord'].type_specifier, 'vec2')
         self.assertEqual(sp.input_variables['vTexCoord'].layout_qualifier, 'varying')
         self.assertEqual(sp.input_variables['vTexCoord'].precision_qualifier, 'mediump')
 
         self.assertEqual(len(sp.uniform_variables), 1)
         self.assertTrue('texChars' in sp.uniform_variables)
-        self.assertEqual(sp.uniform_variables['texChars'].type, 'sampler2D')
+        self.assertEqual(sp.uniform_variables['texChars'].type_specifier, 'sampler2D')
         self.assertEqual(sp.uniform_variables['texChars'].layout_qualifier, 'uniform')
         self.assertEqual(sp.uniform_variables['texChars'].precision_qualifier, 'lowp')
 
