@@ -100,12 +100,13 @@ class VariableDeclaration(object):
 
 class ParameterDeclaration(object):
 
-    def __init__(self, type, name=None):
+    def __init__(self, type, name=None, parameter_qualifier='in'):
         self.type = type
         self.name = name
+        self.parameter_qualifier = parameter_qualifier
 
     def __repr__(self):
-        tokens = [self.type]
+        tokens = [self.parameter_qualifier, self.type]
         if self.name: tokens.append(self.name)
         return ' '.join(tokens)
 
@@ -198,6 +199,9 @@ class CompoundStatement(object):
 
     def __getitem__(self, index):
         return self.statements[index]
+
+    def __len__(self):
+        return len(self.statements)
 
     def __repr__(self):
         lines = []
@@ -390,18 +394,27 @@ class ShaderParser(object):
     def p_parameter_declaration1(self, p):
         ''' parameter_declaration : type_specifier
         '''
-        p[0] = ParameterDeclaration(type=p[1])
+        if p[1] != 'void':
+            p[0] = ParameterDeclaration(type=p[1])
 
     def p_parameter_declaration2(self, p):
         ''' parameter_declaration : type_specifier IDENTIFIER
         '''
         p[0] = ParameterDeclaration(type=p[1], name=p[2])
 
+    def p_parameter_declaration3(self, p):
+        ''' parameter_declaration : parameter_qualifier type_specifier IDENTIFIER
+        '''
+        p[0] = ParameterDeclaration(type=p[2], name=p[3], parameter_qualifier=p[1])
+
     def p_parameter_declaration_list(self, p):
         ''' parameter_declaration_list : parameter_declaration
                                        | parameter_declaration_list COMMA parameter_declaration
         '''
-        p[0] = [p[1]] if len(p) == 2 else p[1] + [p[3]]
+        if len(p) == 2:
+            p[0] = [p[1]] if p[1] else []
+        else:
+            p[0] = p[1] + [p[3]] if p[3] else p[1]
 
     def p_function_prototype(self, p):
         ''' function_prototype : type_specifier IDENTIFIER LPAREN parameter_declaration_list_opt RPAREN
@@ -515,6 +528,13 @@ class ShaderParser(object):
                              | ATTRIBUTE
                              | IN
                              | OUT
+        '''
+        p[0] = p[1]
+
+    def p_parameter_qualifier(self, p):
+        ''' parameter_qualifier : IN
+                                | OUT
+                                | INOUT
         '''
         p[0] = p[1]
 
