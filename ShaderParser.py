@@ -494,9 +494,20 @@ class ShaderParser(object):
         p[0] = p[1]
 
     def p_declarator(self, p):
-        ''' declarator : IDENTIFIER
+        ''' declarator : direct_declarator
+        '''
+        p[0] = p[1]
+
+    def p_direct_declarator1(self, p):
+        ''' direct_declarator : IDENTIFIER
         '''
         p[0] = VariableDeclaration(name=p[1])
+
+    def p_direct_declarator2(self, p):
+        ''' direct_declarator : direct_declarator LBRACKET assignment_expression RBRACKET
+        '''
+        p[1].name += '[%s]' % p[3]
+        p[0] = p[1]
 
     def p_layout_qualifier(self, p):
         ''' layout_qualifier : VARYING

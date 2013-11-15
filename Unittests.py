@@ -171,6 +171,17 @@ class TestShaderVariables(unittest.TestCase):
 
         self.assertEqual(sp.to_str(), 'highp vec2 wave0 = vec2(1.01, 1.08);\nhighp vec2 wave2 = vec2(-1.03, 1.03);')
 
+    def test_array_variable_def(self):
+        sp = ShaderParser()
+        sp.parse('uniform vec4 bones[3*2];float matrix[4][4];', fragment_shader=False, debug=False)
+
+        self.assertEqual(len(sp.input_variables), 0)
+        self.assertEqual(len(sp.output_variables), 0)
+        self.assertEqual(len(sp.uniform_variables), 1)
+        self.assertEqual(len(sp.function_definitions), 0)
+
+        self.assertEqual(sp.to_str(), 'uniform highp vec4 bones[3 * 2];\nhighp float matrix[4][4];')
+
 class TestFunctionDefinition(unittest.TestCase):
 
     def test_empty_function_definition(self):
