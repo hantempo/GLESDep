@@ -201,7 +201,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertTrue('main' in sp.function_definitions)
         self.assertEqual(sp.function_definitions['main'].return_type, 'void')
         self.assertEqual(sp.function_definitions['main'].parameters, [])
-        self.assertEqual(str(sp.function_definitions['main'].statements), '{\n}')
+        self.assertEqual(str(sp.function_definitions['main'].compound_statements), '{\n}')
 
         self.assertEqual(sp.to_str(), 'attribute highp vec3 vertex;\nvoid main()\n{\n}')
 
@@ -233,7 +233,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(sp.function_definitions['main'].return_type, 'void')
         self.assertEqual(sp.function_definitions['main'].parameters, [])
 
-        self.assertEqual(str(sp.function_definitions['main'].statements),
+        self.assertEqual(str(sp.function_definitions['main'].compound_statements),
                 '{\n    gl_Position = 2 + (mvp * vertex);\n    gl_Position = (2 + mvp) * vertex;\n}')
 
     def test_function_definition2(self):
@@ -269,7 +269,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(fun_def.return_type, 'void')
         self.assertEqual(len(fun_def.parameters), 0)
 
-        self.assertEqual(str(fun_def.statements), '{\n    gl_FragColor = texture2D(texChars, vTexCoord);\n}')
+        self.assertEqual(str(fun_def.compound_statements), '{\n    gl_FragColor = texture2D(texChars, vTexCoord);\n}')
 
         self.assertEqual(str(fun_def), 'void main()\n{\n    gl_FragColor = texture2D(texChars, vTexCoord);\n}')
 
@@ -306,7 +306,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(str(fun_def.parameters[1]), 'in int k')
         self.assertEqual(str(fun_def.function_prototype), 'void main(in float v, in int k)')
 
-        self.assertEqual(str(fun_def.statements), '{\n    gl_Position = vec4(-myVertex.y, myVertex.x, 0., .2);\n    vTexCoord = vec2(myVertex.zw);\n}')
+        self.assertEqual(str(fun_def.compound_statements), '{\n    gl_Position = vec4(-myVertex.y, myVertex.x, 0., .2);\n    vTexCoord = vec2(myVertex.zw);\n}')
 
     def test_function_definition4(self):
         sp = ShaderParser()
@@ -336,8 +336,8 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertTrue('main' in sp.function_definitions)
         fun_def = sp.function_definitions['main']
 
-        self.assertEqual(str(fun_def.statements[0]), 'vec4 tex = texture2D(tex0, texcoord0);')
-        self.assertEqual(str(fun_def.statements[1]), 'if (tex.a < 0.5)\n{\n    discard;\n}\nelse\n{\n    gl_FragColor = tex * vec4(fragmentColorVP, 1.0);\n}')
+        self.assertEqual(str(fun_def.compound_statements[0]), 'vec4 tex = texture2D(tex0, texcoord0)')
+        self.assertEqual(str(fun_def.compound_statements[1]), 'if (tex.a < 0.5)\n{\n    discard;\n}\nelse\n{\n    gl_FragColor = tex * vec4(fragmentColorVP, 1.0);\n}')
         self.assertEqual(str(fun_def), '''void main()
 {
     vec4 tex = texture2D(tex0, texcoord0);
@@ -362,13 +362,17 @@ class TestFunctionDefinition(unittest.TestCase):
         sp.parse('''
         void decodeFromByteVec3(inout vec3 myVec)
         {
+            vec4 tmp;
+            vec3 position;
         }
         ''', fragment_shader=False)
 
         self.assertEqual(len(sp.function_definitions), 1)
         self.assertTrue('decodeFromByteVec3' in sp.function_definitions)
         fun_def = sp.function_definitions['decodeFromByteVec3']
-        self.assertEqual(len(fun_def.statements), 0)
+        self.assertEqual(len(fun_def.compound_statements), 2)
+
+        self.assertEqual(str(fun_def), 'void decodeFromByteVec3(inout vec3 myVec)\n{\n    vec4 tmp;\n    vec3 position;\n}')
 
 if __name__ == '__main__':
     import logging

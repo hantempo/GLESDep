@@ -122,9 +122,9 @@ class FunctionPrototype(object):
 
 class FunctionDefinition(object):
 
-    def __init__(self, function_prototype, statements):
+    def __init__(self, function_prototype, compound_statements):
         self.function_prototype = function_prototype
-        self.statements = statements
+        self.compound_statements = compound_statements
 
     @property
     def name(self):
@@ -139,7 +139,7 @@ class FunctionDefinition(object):
         return self.function_prototype.parameters
 
     def __repr__(self):
-        return '\n'.join([str(self.function_prototype), str(self.statements)])
+        return '\n'.join([str(self.function_prototype), str(self.compound_statements)])
 
 class FunctionCall(object):
 
@@ -168,13 +168,10 @@ class AssignmentExpression(object):
     def __init__(self, op, left, right):
         self.op = op
         self.left = left
-        self.left_type = None
         self.right = right
 
     def __repr__(self):
         str = '%s %s %s;' % (self.left, self.op, self.right)
-        if self.left_type:
-            str = self.left_type + ' ' + str
         return str
 
 class IfStatement(object):
@@ -194,20 +191,28 @@ class IfStatement(object):
 
 class CompoundStatement(object):
 
-    def __init__(self, statements):
-        self.statements = statements
+    def __init__(self, block_items):
+        self.block_items = []
+        for item in block_items:
+            if isinstance(item, list): # for declarations
+                self.block_items += item
+            else:
+                self.block_items.append(item)
 
     def __getitem__(self, index):
-        return self.statements[index]
+        return self.block_items[index]
 
     def __len__(self):
-        return len(self.statements)
+        return len(self.block_items)
 
     def __repr__(self):
         lines = []
         lines.append('{')
-        for stat in self.statements:
-            lines += map(lambda l : ' '*4+l, str(stat).splitlines())
+        for item in self.block_items:
+            if isinstance(item, VariableDeclaration):
+                lines += ['    %s;' % str(item)]
+            else:
+                lines += map(lambda l : ' '*4+l, str(item).splitlines())
         lines.append('}')
         return '\n'.join(lines)
 
@@ -217,7 +222,7 @@ class ShaderParser(object):
         self.lexer = ShaderLexer.ShaderLexer()
         self.tokens = self.lexer.tokens
 
-        rules_with_opt = [ 'statement_list',
+        rules_with_opt = [ 'block_item_list',
             'parameter_declaration_list',
         ]
         for rule in rules_with_opt:
@@ -340,14 +345,8 @@ class ShaderParser(object):
 
     def p_expression(self, p):
         ''' expression : assignment_expression
-                       | type_specifier assignment_expression
         '''
-        if len(p) == 3:
-            # declaration and assignment to variable in the same expression
-            p[2].left_type = p[1]
-            p[0] = p[2]
-        else:
-            p[0] = p[1]
+        p[0] = p[1]
 
     def p_expression_statement(self, p):
         ''' expression_statement : expression SEMI
@@ -377,9 +376,15 @@ class ShaderParser(object):
         '''
         p[0] = p[1]
 
-    def p_statement_list(self, p):
-        ''' statement_list : statement
-                           | statement_list statement
+    def p_block_item(self, p):
+        ''' block_item : statement
+                       | declaration
+        '''
+        p[0] = p[1]
+
+    def p_block_item_list(self, p):
+        ''' block_item_list : block_item
+                            | block_item_list block_item
         '''
         if len(p) == 2:
             p[0] = [p[1]]
@@ -387,7 +392,7 @@ class ShaderParser(object):
             p[0] = p[1] + [p[2]]
 
     def p_compound_statement(self, p):
-        ''' compound_statement : LBRACE statement_list_opt RBRACE
+        ''' compound_statement : LBRACE block_item_list_opt RBRACE
         '''
         p[0] = CompoundStatement(p[2])
 
@@ -424,7 +429,7 @@ class ShaderParser(object):
     def p_function_definition(self, p):
         ''' function_definition : function_prototype compound_statement
         '''
-        p[0] = FunctionDefinition(function_prototype=p[1], statements=p[2])
+        p[0] = FunctionDefinition(function_prototype=p[1], compound_statements=p[2])
 
     def p_external_declaration(self, p):
         ''' external_declaration : function_definition
