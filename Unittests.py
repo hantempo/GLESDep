@@ -380,12 +380,16 @@ class TestFunction(unittest.TestCase):
         void main()
         {
             mat4 M1 = mat4( BONE[I.y * 3 + 0],BONE[I.y * 3 + 1],BONE[I.y * 3 + 2],vec4( 0.0, 0.0, 0.0, 1.0));
+            tangent = (vec4( tangent, 0.0) * M4).xyz;
         }''', fragment_shader=False)
 
         self.assertEqual(len(sp.function_definitions), 1)
         fun_def = sp.function_definitions['main']
-        self.assertEqual(len(fun_def.compound_statements), 1)
-        self.assertEqual(str(fun_def.compound_statements[0]), "mat4 M1 = mat4(BONE[(I.y * 3) + 0], BONE[(I.y * 3) + 1], BONE[(I.y * 3) + 2], vec4(0.0, 0.0, 0.0, 1.0))")
+        self.assertEqual(len(fun_def.compound_statements), 2)
+        self.assertEqual(str(fun_def.compound_statements), """{
+    mat4 M1 = mat4(BONE[(I.y * 3) + 0], BONE[(I.y * 3) + 1], BONE[(I.y * 3) + 2], vec4(0.0, 0.0, 0.0, 1.0));
+    tangent = (vec4(tangent, 0.0) * M4).xyz;
+}""")
 
 if __name__ == '__main__':
     import logging

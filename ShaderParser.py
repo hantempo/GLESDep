@@ -295,7 +295,10 @@ class ShaderParser(object):
     def p_postfix_expression3(self, p):
         ''' postfix_expression : postfix_expression DOT IDENTIFIER
         '''
-        p[0] = '.'.join([p[1], p[3]])
+        if isinstance(p[1], BinaryExpression):
+            p[0] = '(%s).%s' % (str(p[1]), p[3])
+        else:
+            p[0] = '.'.join([p[1], p[3]])
 
     def p_postfix_expression4(self, p):
         ''' postfix_expression : postfix_expression LPAREN argument_expression_list RPAREN
