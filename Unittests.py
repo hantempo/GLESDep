@@ -182,7 +182,7 @@ class TestShaderVariables(unittest.TestCase):
 
         self.assertEqual(sp.to_str(), 'uniform highp vec4 bones[3 * 2];\nhighp float matrix[4][4];')
 
-class TestFunctionDefinition(unittest.TestCase):
+class TestFunction(unittest.TestCase):
 
     def test_empty_function_definition(self):
         sp = ShaderParser()
@@ -373,6 +373,19 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(len(fun_def.compound_statements), 2)
 
         self.assertEqual(str(fun_def), 'void decodeFromByteVec3(inout vec3 myVec)\n{\n    vec4 tmp;\n    vec3 position;\n}')
+
+    def test_function_call_with_array(self):
+        sp = ShaderParser()
+        sp.parse('''
+        void main()
+        {
+            mat4 M1 = mat4( BONE[I.y * 3 + 0],BONE[I.y * 3 + 1],BONE[I.y * 3 + 2],vec4( 0.0, 0.0, 0.0, 1.0));
+        }''', fragment_shader=False)
+
+        self.assertEqual(len(sp.function_definitions), 1)
+        fun_def = sp.function_definitions['main']
+        self.assertEqual(len(fun_def.compound_statements), 1)
+        self.assertEqual(str(fun_def.compound_statements[0]), "mat4 M1 = mat4(BONE[(I.y * 3) + 0], BONE[(I.y * 3) + 1], BONE[(I.y * 3) + 2], vec4(0.0, 0.0, 0.0, 1.0))")
 
 if __name__ == '__main__':
     import logging

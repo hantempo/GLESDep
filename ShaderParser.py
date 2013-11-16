@@ -148,7 +148,7 @@ class FunctionCall(object):
         self.arguments = arguments
 
     def __repr__(self):
-        return '%s(%s)' % (self.name, ', '.join(self.arguments))
+        return '%s(%s)' % (self.name, ', '.join(map(lambda a:str(a), self.arguments)))
 
 class BinaryExpression(object):
 
@@ -288,11 +288,16 @@ class ShaderParser(object):
         p[0] = p[1]
 
     def p_postfix_expression2(self, p):
+        ''' postfix_expression : primary_expression LBRACKET expression RBRACKET
+        '''
+        p[0] = '%s[%s]' % (p[1], p[3])
+
+    def p_postfix_expression3(self, p):
         ''' postfix_expression : postfix_expression DOT IDENTIFIER
         '''
         p[0] = '.'.join([p[1], p[3]])
 
-    def p_postfix_expression3(self, p):
+    def p_postfix_expression4(self, p):
         ''' postfix_expression : postfix_expression LPAREN argument_expression_list RPAREN
         '''
         p[0] = FunctionCall(name=p[1], arguments=p[3])
