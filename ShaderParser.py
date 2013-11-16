@@ -240,7 +240,7 @@ class ShaderParser(object):
 
         self.default_precision_qualifier = {}
 
-        self.function_definitions = {}
+        self.function_definitions = collections.OrderedDict()
 
     def to_str(self):
         return '\n'.join(map(lambda var : str(var) + ';', self.variable_declarations.values()) +
