@@ -189,6 +189,22 @@ class IfStatement(object):
             lines += str(self.if_false).splitlines()
         return '\n'.join(lines)
 
+class DiscardStatement(object):
+
+    def __repr__(self):
+        return 'discard;'
+
+class ReturnStatement(object):
+
+    def __init__(self, return_value=None):
+        self.return_value = return_value
+
+    def __repr__(self):
+        if self.return_value:
+            return 'return %s;' % str(self.return_value)
+        else:
+            return 'return;'
+
 class CompoundStatement(object):
 
     def __init__(self, block_items):
@@ -356,11 +372,6 @@ class ShaderParser(object):
         '''
         p[0] = p[1]
 
-    def p_expression_statement(self, p):
-        ''' expression_statement : expression SEMI
-        '''
-        p[0] = p[1]
-
     def p_selection_statement1(self, p):
         ''' selection_statement : IF LPAREN expression RPAREN statement
         '''
@@ -374,7 +385,21 @@ class ShaderParser(object):
     def p_jump_statement1(self, p):
         ''' jump_statement : DISCARD SEMI
         '''
-        p[0] = p[1] + ';'
+        p[0] = DiscardStatement()
+
+    def p_jump_statement2(self, p):
+        ''' jump_statement : RETURN expression_statement
+                           | RETURN SEMI
+        '''
+        if p[2] == ';':
+            p[0] = ReturnStatement()
+        else:
+            p[0] = ReturnStatement(p[2])
+
+    def p_expression_statement(self, p):
+        ''' expression_statement : expression SEMI
+        '''
+        p[0] = p[1]
 
     def p_statement(self, p):
         ''' statement : expression_statement

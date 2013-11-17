@@ -381,15 +381,27 @@ class TestFunction(unittest.TestCase):
         {
             mat4 M1 = mat4( BONE[I.y * 3 + 0],BONE[I.y * 3 + 1],BONE[I.y * 3 + 2],vec4( 0.0, 0.0, 0.0, 1.0));
             tangent = (vec4( tangent, 0.0) * M4).xyz;
+            return;
         }''', fragment_shader=False)
 
         self.assertEqual(len(sp.function_definitions), 1)
         fun_def = sp.function_definitions['main']
-        self.assertEqual(len(fun_def.compound_statements), 2)
+        self.assertEqual(len(fun_def.compound_statements), 3)
         self.assertEqual(str(fun_def.compound_statements), """{
     mat4 M1 = mat4(BONE[(I.y * 3) + 0], BONE[(I.y * 3) + 1], BONE[(I.y * 3) + 2], vec4(0.0, 0.0, 0.0, 1.0));
     tangent = (vec4(tangent, 0.0) * M4).xyz;
+    return;
 }""")
+
+    def test_function_with_return(self):
+        sp = ShaderParser()
+        sp.parse('vec3 calculate_normal( vec2 tc){return vec3(tc, 0.1);}', fragment_shader=False)
+
+        self.assertEqual(len(sp.function_definitions), 1)
+        fun_def = sp.function_definitions['calculate_normal']
+        self.assertEqual(len(fun_def.compound_statements), 1)
+
+        self.assertEqual(str(fun_def), 'vec3 calculate_normal(in vec2 tc)\n{\n    return vec3(tc, 0.1);\n}')
 
 if __name__ == '__main__':
     import logging
