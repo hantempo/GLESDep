@@ -64,15 +64,17 @@ class PrecisionStatement(object):
 
 class VariableDeclaration(object):
 
-    def __init__(self, name, type_specifier=None, layout_qualifier=None, precision_qualifier=None):
+    def __init__(self, name, type_specifier=None, type_qualifier=None, layout_qualifier=None, precision_qualifier=None):
         self.name = name
         self.type_specifier = type_specifier
+        self.type_qualifier = type_qualifier
         self.layout_qualifier = layout_qualifier
         self.precision_qualifier = precision_qualifier
         self.initializer = None
 
     def __repr__(self):
         tokens = []
+        if self.type_qualifier: tokens.append(self.type_qualifier)
         if self.layout_qualifier: tokens.append(self.layout_qualifier)
         if self.precision_qualifier: tokens.append(self.precision_qualifier)
         if self.type_specifier: tokens.append(self.type_specifier)
@@ -521,6 +523,28 @@ class ShaderParser(object):
             dec.precision_qualifier = p[2]
             dec.type_specifier = p[3]
         p[0] = p[4]
+
+    def p_declaration_body5(self, p):
+        ''' declaration_body : type_qualifier type_specifier init_declarator_list
+        '''
+        for dec in p[3]:
+            dec.type_qualifier = p[1]
+            dec.type_specifier = p[2]
+        p[0] = p[3]
+
+    def p_declaration_body6(self, p):
+        ''' declaration_body : type_qualifier precision_qualifier type_specifier init_declarator_list
+        '''
+        for dec in p[4]:
+            dec.type_qualifier = p[1]
+            dec.precision_qualifier = p[2]
+            dec.type_specifier = p[3]
+        p[0] = p[4]
+
+    def p_type_qualifier(self, p):
+        ''' type_qualifier : CONST
+        '''
+        p[0] = p[1]
 
     def p_init_declarator_list(self, p):
         ''' init_declarator_list : init_declarator

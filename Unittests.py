@@ -182,6 +182,17 @@ class TestShaderVariables(unittest.TestCase):
 
         self.assertEqual(sp.to_str(), 'uniform highp vec4 bones[3 * 2];\nhighp float matrix[4][4];')
 
+    def test_const_variable_def(self):
+        sp = ShaderParser()
+        sp.parse('const mediump int n = 4;')
+
+        self.assertEqual(len(sp.input_variables), 0)
+        self.assertEqual(len(sp.output_variables), 0)
+        self.assertEqual(len(sp.uniform_variables), 0)
+        self.assertEqual(len(sp.function_definitions), 0)
+
+        self.assertEqual(sp.to_str(), 'const mediump int n = 4;')
+
 class TestFunction(unittest.TestCase):
 
     def test_empty_function_definition(self):
