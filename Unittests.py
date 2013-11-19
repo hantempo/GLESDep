@@ -414,6 +414,34 @@ class TestFunction(unittest.TestCase):
 
         self.assertEqual(str(fun_def), 'vec3 calculate_normal(in vec2 tc)\n{\n    return vec3(tc, 0.1);\n}')
 
+class TestTextures(unittest.TestCase):
+
+    def test_pixel_store(self):
+        from GLESInterface import GLESInterface as GLES
+        from GLESEnum import GLESEnum
+        gles = GLES()
+
+        # check the initial states
+        self.assertEqual(gles.GL_PACK_ROW_LENGTH, 0)
+        self.assertEqual(gles.GL_PACK_IMAGE_HEIGHT, 0)
+        self.assertEqual(gles.GL_PACK_SKIP_PIXELS, 0)
+        self.assertEqual(gles.GL_PACK_SKIP_ROWS, 0)
+        self.assertEqual(gles.GL_PACK_SKIP_IMAGES, 0)
+        self.assertEqual(gles.GL_PACK_ALIGNMENT, 4)
+        self.assertEqual(gles.GL_UNPACK_ROW_LENGTH, 0)
+        self.assertEqual(gles.GL_UNPACK_IMAGE_HEIGHT, 0)
+        self.assertEqual(gles.GL_UNPACK_SKIP_PIXELS, 0)
+        self.assertEqual(gles.GL_UNPACK_SKIP_ROWS, 0)
+        self.assertEqual(gles.GL_UNPACK_SKIP_IMAGES, 0)
+        self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 4)
+
+        gles.glPixelStorei(GLESEnum.GL_PACK_ALIGNMENT, 1)
+        self.assertEqual(gles.GL_PACK_ALIGNMENT, 1)
+        self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 4)
+        gles.glPixelStorei(GLESEnum.GL_UNPACK_ALIGNMENT, 8)
+        self.assertEqual(gles.GL_PACK_ALIGNMENT, 1)
+        self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 8)
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)
