@@ -19,10 +19,10 @@ class ShaderLexer(object):
         self.lexer.lineno = 1
 
     keywords = (
-        'const', 'struct',
+        'const', #'struct',
         # jumps
-        'break', 'continue', 'do', 'else', 'for', 'if', 'discard',
-        'return', 'switch', 'case', 'default', 'while',
+        'if', 'discard', 'else', #'break', 'continue', 'do', 'for',
+        'return', #'switch', 'case', 'default', 'while',
         # types
         'void', 'bool', 'int', 'uint', 'float',
         'vec2', 'vec3', 'vec4',
@@ -39,7 +39,7 @@ class ShaderLexer(object):
         'usampler2D', 'usampler2DArray', 'usampler3D', 'usamplerCube',
         # layout qualifiers
         'varying', 'uniform', 'attribute', 'in', 'out', 'inout',
-        'centroid', 'flat', 'smooth', 'layout', 'invariant',
+        #'layout', 'smooth', 'invariant', 'centroid', 'flat',
         # precision qualifiers
         'precision', 'lowp', 'mediump', 'highp',
     )
@@ -52,8 +52,8 @@ class ShaderLexer(object):
         #'UINT_CONSTANT',
 
         # Operators (+,-,*,/,%,|,&,~,^,<<,>>, ||, &&, !, <, <=, >, >=, ==, !=)
-        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO',
-        'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
+        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', #'MODULO',
+        'OR', 'AND', 'NOT', 'XOR', #'LSHIFT', 'RSHIFT',
         'LOR', 'LAND', 'LNOT',
         'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
@@ -62,19 +62,16 @@ class ShaderLexer(object):
         'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL', 'OREQUAL',
 
         # Increment/decrement (++,--)
-        'PLUSPLUS', 'MINUSMINUS',
-
-        # Structure dereference (->)
-        'ARROW',
+        #'PLUSPLUS', 'MINUSMINUS',
 
         # Ternary operator (?)
-        'TERNARY',
+        #'TERNARY',
 
         # Delimeters ( ) [ ] { } , . ; :
         'LPAREN', 'RPAREN',
         'LBRACKET', 'RBRACKET',
         'LBRACE', 'RBRACE',
-        'COMMA', 'DOT', 'SEMI', 'COLON',
+        'COMMA', 'DOT', 'SEMI', #'COLON',
     ]
 
     # Operators
@@ -82,13 +79,13 @@ class ShaderLexer(object):
     t_MINUS            = r'-'
     t_TIMES            = r'\*'
     t_DIVIDE           = r'/'
-    t_MODULO           = r'%'
+    #t_MODULO           = r'%'
     t_OR               = r'\|'
     t_AND              = r'&'
     t_NOT              = r'~'
     t_XOR              = r'\^'
-    t_LSHIFT           = r'<<'
-    t_RSHIFT           = r'>>'
+    #t_LSHIFT           = r'<<'
+    #t_RSHIFT           = r'>>'
     t_LOR              = r'\|\|'
     t_LAND             = r'&&'
     t_LNOT             = r'!'
@@ -114,14 +111,11 @@ class ShaderLexer(object):
     t_XOREQUAL         = r'^='
 
     # Increment/decrement
-    t_PLUSPLUS         = r'\+\+'
-    t_MINUSMINUS       = r'--'
-
-    # ->
-    t_ARROW            = r'->'
+    #t_PLUSPLUS         = r'\+\+'
+    #t_MINUSMINUS       = r'--'
 
     # ?
-    t_TERNARY          = r'\?'
+    #t_TERNARY          = r'\?'
 
     # Delimeters
     t_LPAREN           = r'\('
@@ -133,7 +127,7 @@ class ShaderLexer(object):
     t_COMMA            = r','
     t_DOT              = r'\.'
     t_SEMI             = r';'
-    t_COLON            = r':'
+    #t_COLON            = r':'
 
     t_BOOL_CONSTANT = r'true|false'
     t_INT_CONSTANT = r'\d+([uU]|[lL]|[uU][lL]|[lL][uU])?'
