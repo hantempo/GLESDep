@@ -7,7 +7,7 @@ def enum(*sequential, **named):
     enums['names'] = reverse
     return type('Enum', (), enums)
 
-GLESEnum = enum(
+Enum = enum(
     GL_NONE                         = 0x0000,
 
     GL_TEXTURE_2D                   = 0x0DE1,
@@ -20,6 +20,21 @@ GLESEnum = enum(
     GL_TEXTURE_CUBE_MAP_NEGATIVE_Z  = 0x851A,
     GL_TEXTURE_2D_ARRAY             = 0x8C1A,
     GL_TEXTURE_3D                   = 0x806F,
+
+    GL_TEXTURE_BINDING_2D           = 0x8069,
+    GL_TEXTURE_BINDING_CUBE_MAP     = 0x8514,
+    GL_TEXTURE_BINDING_2D_ARRAY     = 0x8C1D,
+    GL_TEXTURE_BINDING_3D           = 0x806A,
+
+    GL_TEXTURE0                     = 0x84C0,
+    GL_TEXTURE1                     = 0x84C1,
+    GL_TEXTURE2                     = 0x84C2,
+    GL_TEXTURE3                     = 0x84C3,
+    GL_TEXTURE4                     = 0x84C4,
+    GL_TEXTURE5                     = 0x84C5,
+    GL_TEXTURE6                     = 0x84C6,
+    GL_TEXTURE7                     = 0x84C7,
+    GL_TEXTURE8                     = 0x84C8,
 
     GL_BYTE                         = 0x1400,
     GL_UNSIGNED_BYTE                = 0x1401,

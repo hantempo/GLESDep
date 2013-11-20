@@ -417,8 +417,8 @@ class TestFunction(unittest.TestCase):
 class TestTextures(unittest.TestCase):
 
     def test_pixel_store(self):
-        from GLESInterface import GLESInterface as GLES
-        from GLESEnum import GLESEnum
+        from GLESInterface import Interface as GLES
+        from GLESEnum import Enum
         gles = GLES()
 
         # check the initial states
@@ -435,12 +435,42 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.GL_UNPACK_SKIP_IMAGES, 0)
         self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 4)
 
-        gles.glPixelStorei(GLESEnum.GL_PACK_ALIGNMENT, 1)
+        gles.glPixelStorei(Enum.GL_PACK_ALIGNMENT, 1)
         self.assertEqual(gles.GL_PACK_ALIGNMENT, 1)
         self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 4)
-        gles.glPixelStorei(GLESEnum.GL_UNPACK_ALIGNMENT, 8)
+        gles.glPixelStorei(Enum.GL_UNPACK_ALIGNMENT, 8)
         self.assertEqual(gles.GL_PACK_ALIGNMENT, 1)
         self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 8)
+
+    def test_bind_texture(self):
+        from GLESInterface import Interface as GLES
+        from GLESEnum import Enum
+        gles = GLES()
+
+        # check the initial state
+        self.assertEqual(gles.GL_ACTIVE_TEXTURE, Enum.GL_TEXTURE0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 0)
+
+        gles.glBindTexture(Enum.GL_TEXTURE_2D, 2)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 2)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 0)
+
+        gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 4)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 2)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 4)
+
+        gles.glBindTexture(Enum.GL_TEXTURE_2D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
+        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 4)
 
 if __name__ == '__main__':
     import logging
