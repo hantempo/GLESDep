@@ -414,63 +414,91 @@ class TestFunction(unittest.TestCase):
 
         self.assertEqual(str(fun_def), 'vec3 calculate_normal(in vec2 tc)\n{\n    return vec3(tc, 0.1);\n}')
 
+from GLESInterface import Interface as GLES
+from GLESEnum import Enum
+
 class TestTextures(unittest.TestCase):
 
     def test_pixel_store(self):
-        from GLESInterface import Interface as GLES
-        from GLESEnum import Enum
         gles = GLES()
 
         # check the initial states
-        self.assertEqual(gles.GL_PACK_ROW_LENGTH, 0)
-        self.assertEqual(gles.GL_PACK_IMAGE_HEIGHT, 0)
-        self.assertEqual(gles.GL_PACK_SKIP_PIXELS, 0)
-        self.assertEqual(gles.GL_PACK_SKIP_ROWS, 0)
-        self.assertEqual(gles.GL_PACK_SKIP_IMAGES, 0)
-        self.assertEqual(gles.GL_PACK_ALIGNMENT, 4)
-        self.assertEqual(gles.GL_UNPACK_ROW_LENGTH, 0)
-        self.assertEqual(gles.GL_UNPACK_IMAGE_HEIGHT, 0)
-        self.assertEqual(gles.GL_UNPACK_SKIP_PIXELS, 0)
-        self.assertEqual(gles.GL_UNPACK_SKIP_ROWS, 0)
-        self.assertEqual(gles.GL_UNPACK_SKIP_IMAGES, 0)
-        self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 4)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_ROW_LENGTH), 0)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_IMAGE_HEIGHT), 0)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_SKIP_PIXELS), 0)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_SKIP_ROWS), 0)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_SKIP_IMAGES), 0)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_ALIGNMENT), 4)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_ROW_LENGTH), 0)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_IMAGE_HEIGHT), 0)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_SKIP_PIXELS), 0)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_SKIP_ROWS), 0)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_SKIP_IMAGES), 0)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_ALIGNMENT), 4)
 
         gles.glPixelStorei(Enum.GL_PACK_ALIGNMENT, 1)
-        self.assertEqual(gles.GL_PACK_ALIGNMENT, 1)
-        self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 4)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_ALIGNMENT), 1)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_ALIGNMENT), 4)
         gles.glPixelStorei(Enum.GL_UNPACK_ALIGNMENT, 8)
-        self.assertEqual(gles.GL_PACK_ALIGNMENT, 1)
-        self.assertEqual(gles.GL_UNPACK_ALIGNMENT, 8)
+        self.assertEqual(gles.glGet(Enum.GL_PACK_ALIGNMENT), 1)
+        self.assertEqual(gles.glGet(Enum.GL_UNPACK_ALIGNMENT), 8)
 
     def test_bind_texture(self):
-        from GLESInterface import Interface as GLES
-        from GLESEnum import Enum
         gles = GLES()
 
         # check the initial state
-        self.assertEqual(gles.GL_ACTIVE_TEXTURE, Enum.GL_TEXTURE0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 0)
+        self.assertEqual(gles.glGet(Enum.GL_ACTIVE_TEXTURE), Enum.GL_TEXTURE0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D_ARRAY), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_3D), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_CUBE_MAP), 0)
 
         gles.glBindTexture(Enum.GL_TEXTURE_2D, 2)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 2)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D), 2)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D_ARRAY), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_3D), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_CUBE_MAP), 0)
 
         gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 4)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 2)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 4)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D), 2)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D_ARRAY), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_3D), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_CUBE_MAP), 4)
 
         gles.glBindTexture(Enum.GL_TEXTURE_2D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_2D_ARRAY, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_3D, 0)
-        self.assertEqual(gles.GL_TEXTURE_BINDING_CUBE_MAP, 4)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_2D_ARRAY), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_3D), 0)
+        self.assertEqual(gles.glGet(Enum.GL_TEXTURE_BINDING_CUBE_MAP), 4)
+
+    def test_tex_storage(self):
+        gles = GLES()
+
+        gles.glBindTexture(Enum.GL_TEXTURE_2D, 1)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 0)
+
+        gles.glTexStorage2D(Enum.GL_TEXTURE_2D, 1, Enum.GL_RGB8, 2, 2)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D)
+        self.assertEqual(tex_obj.levels, 1)
+        self.assertEqual(tex_obj.internalformat, Enum.GL_RGB8)
+        self.assertEqual(tex_obj.width, 2)
+        self.assertEqual(tex_obj.height, 2)
+        self.assertEqual(tex_obj.depth, 1)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_CUBE_MAP)
+        self.assertEqual(tex_obj, None)
+
+        gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 3)
+        gles.glTexStorage2D(Enum.GL_TEXTURE_CUBE_MAP, 3, Enum.GL_RGBA4, 4, 4)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_CUBE_MAP)
+        self.assertEqual(tex_obj.levels, 3)
+        self.assertEqual(tex_obj.internalformat, Enum.GL_RGBA4)
+        self.assertEqual(tex_obj.width, 4)
+        self.assertEqual(tex_obj.height, 4)
+        self.assertEqual(tex_obj.depth, 1)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_CUBE_MAP, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D)
+        self.assertNotEqual(tex_obj, None)
 
 if __name__ == '__main__':
     import logging

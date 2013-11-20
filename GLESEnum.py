@@ -21,11 +21,14 @@ Enum = enum(
     GL_TEXTURE_2D_ARRAY             = 0x8C1A,
     GL_TEXTURE_3D                   = 0x806F,
 
+    GL_TEXTURE_IMMUTABLE_FORMAT     = 0x912F,
+
     GL_TEXTURE_BINDING_2D           = 0x8069,
     GL_TEXTURE_BINDING_CUBE_MAP     = 0x8514,
     GL_TEXTURE_BINDING_2D_ARRAY     = 0x8C1D,
     GL_TEXTURE_BINDING_3D           = 0x806A,
 
+    GL_ACTIVE_TEXTURE               = 0x84E0,
     GL_TEXTURE0                     = 0x84C0,
     GL_TEXTURE1                     = 0x84C1,
     GL_TEXTURE2                     = 0x84C2,
