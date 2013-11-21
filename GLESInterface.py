@@ -9,6 +9,7 @@ class TextureObject(object):
 
     def __init__(self):
 
+        self.initialized = False
         self.states = {
             Enum.GL_TEXTURE_IMMUTABLE_FORMAT : 0,
         }
@@ -112,6 +113,17 @@ class Context(object):
             tex_obj.width = width
             tex_obj.height = height
             tex_obj.depth = 1
+            tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
+
+    def glTexStorage3D(self, target, levels, internalformat, width, height, depth):
+        tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
+        if self._check_texture_name(tex_name):
+            tex_obj = self.texture_objects[tex_name]
+            tex_obj.levels = levels
+            tex_obj.internalformat = internalformat
+            tex_obj.width = width
+            tex_obj.height = height
+            tex_obj.depth = depth
             tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
 
 class Interface(object):
