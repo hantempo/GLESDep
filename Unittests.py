@@ -18,13 +18,13 @@ class TestPreprocessor(unittest.TestCase):
 
     def test_gl_es(self):
         input = '''  \t #version 300  es
-        #ifndef GL_ES
+#ifndef GL_ES
         uniform lowp sampler2D texture_unit0;
-        #endif
-        #ifdef GL_ES
+#endif
+#ifdef GL_ES
         varying samplerCube texture_unit0;
-        #endif
-        '''
+#endif
+'''
         expected_output = '''
 
 
