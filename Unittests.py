@@ -1,34 +1,43 @@
 import unittest
 
-from ShaderParser import ShaderParser
+from ShaderParser import ShaderParser, Preprocess
 
 class TestPreprocessor(unittest.TestCase):
 
     def test_empty_shader(self):
-        sp = ShaderParser()
-        sp.parse('')
-        self.assertEqual(sp.version, 100)
-
-        self.assertEqual(sp.to_str(), '')
+        input = ''
+        output, version = Preprocess(input)
+        self.assertEqual(output, '')
+        self.assertEqual(version, 100)
 
     def test_version_300(self):
-        sp = ShaderParser()
-        sp.parse('  \t #version 300  es')
-        self.assertEqual(sp.version, 300)
-
-        self.assertEqual(sp.to_str(), '')
+        input = '  \t # version 300  es'
+        output, version = Preprocess(input)
+        self.assertEqual(output, '')
+        self.assertEqual(version, 300)
 
     def test_gl_es(self):
-        # GL_ES is a predefined macro
-        sp = ShaderParser()
-        sp.parse('''  \t #version 300  es
+        input = '''  \t #version 300  es
         #ifndef GL_ES
         uniform lowp sampler2D texture_unit0;
         #endif
         #ifdef GL_ES
         varying samplerCube texture_unit0;
         #endif
-        ''')
+        '''
+        expected_output = '''
+
+
+
+
+        varying samplerCube texture_unit0;'''
+        output, version = Preprocess(input)
+        self.assertEqual(output, expected_output)
+        self.assertEqual(version, 300)
+
+        # GL_ES is a predefined macro
+        sp = ShaderParser()
+        sp.parse(input)
         self.assertEqual(sp.version, 300)
         self.assertEqual(len(sp.input_variables), 1)
         self.assertEqual(len(sp.output_variables), 0)
@@ -39,6 +48,79 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(sp.input_variables['texture_unit0'].precision_qualifier, 'lowp')
 
         self.assertEqual(sp.to_str(), 'varying lowp samplerCube texture_unit0;')
+
+    def test_gl_es2(self):
+        input = '''#version 300 es
+#ifdef GL_ES
+precision mediump float;
+#endif
+#ifndef GL_ES
+#define highp
+#define mediump
+#define lowp
+#endif
+#define SHADOW_MAP
+#define SOFT_SHADOW
+#ifdef GL_ES
+#if defined LIGHTING || defined REFLECTION || defined DEP_TEXTURING || defined TRANSITION_EFFECT
+precision mediump float;
+#else
+precision lowp float;
+#endif
+#endif
+#ifdef GL_ES
+#if defined NEED_HIGHP
+precision highp float;
+#endif
+#endif
+in vec2 out_texcoord0;
+out vec4 frag_color;
+
+uniform lowp sampler2D texture_unit0;
+uniform lowp vec3 color;
+
+void main()
+{
+    vec4 texel = texture( texture_unit0, out_texcoord0) * vec4( color, 1.0);
+    frag_color = vec4( texel.xyz, 0.0);
+}'''
+        expected_output = '''
+
+precision mediump float;
+
+
+
+
+
+
+
+
+
+
+
+
+precision lowp float;
+
+
+
+
+
+
+
+in vec2 out_texcoord0;
+out vec4 frag_color;
+
+uniform lowp sampler2D texture_unit0;
+uniform lowp vec3 color;
+
+void main()
+{
+    vec4 texel = texture( texture_unit0, out_texcoord0) * vec4( color, 1.0);
+    frag_color = vec4( texel.xyz, 0.0);
+}'''
+        output, version = Preprocess(input)
+        self.assertEqual(output, expected_output)
+        self.assertEqual(version, 300)
 
 class TestShaderVariables(unittest.TestCase):
 

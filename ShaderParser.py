@@ -1,25 +1,36 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import collections
+import collections, re
 from subprocess import Popen, PIPE
 from ply import yacc
 
 import ShaderLexer
 
-def preprocess(input_text, cpp_path='cpp', cpp_args='-DGL_ES'):
+def Preprocess(input_text):
 
-    path_list = [cpp_path]
-    if isinstance(cpp_args, list):
-        path_list += cpp_args
-    elif cpp_args != '':
-        path_list += [cpp_args]
+    version = 100
+    lines = input_text.splitlines()
+
+    # check empty input
+    if len(lines) == 0:
+        return '', version
+
+    # check the version
+    # The valid format for version declaration:
+    # whitespace_opt POUND whitespace_opt VERSION whitespace number whitespace ES whitespace_opt
+    version_declaration_pattern = r'\s*#\s*version\s+(\d+)\s+es\s*'
+    match = re.match(version_declaration_pattern, lines[0])
+    if match:
+        version = int(match.group(1))
+        lines[0] = ''
+    input_text = '\n'.join(lines)
 
     try:
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
         #
-        pipe = Popen(path_list, stdin=PIPE, stdout=PIPE, universal_newlines=True)
+        pipe = Popen(['cpp', '-DGL_ES'], stdin=PIPE, stdout=PIPE, universal_newlines=True)
         text = pipe.communicate(input=input_text)[0]
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
@@ -27,11 +38,21 @@ def preprocess(input_text, cpp_path='cpp', cpp_args='-DGL_ES'):
             ('Original error: %s' % e))
 
     # remove the leading comment lines
-    lines = text.splitlines()
-    lines = filter(lambda l : not l.lstrip().startswith('#'), lines)
-    text = '\n'.join(lines)
+    new_lines = []
+    line_number = 1
+    line_marker_pattern = r'# (\d+) ".*"'
+    for line in text.splitlines():
+        match = re.match(line_marker_pattern, line)
+        if match:
+            next_line_number = int(match.group(1))
+            new_lines += [''] * (next_line_number - line_number)
+            line_number = next_line_number
+        else:
+            new_lines.append(line)
+            line_number += 1
+    text = '\n'.join(new_lines)
 
-    return text
+    return text, version
 
 # categories of variable types
 def is_floating_point_type(type):
@@ -686,17 +707,7 @@ class ShaderParser(object):
 
         logger.debug('Input before pre-processor : "%s"' % (text))
 
-        # check whether the first line of the input file contains "#version 300 es"
-        parts = text.split('\n', 1)
-        if parts[0].split() == ['#version', '300', 'es']:
-            self.version = 300
-            if len(parts) == 1:
-                text = ''
-            else:
-                text = parts[1]
-
-        if text:
-            text = preprocess(text)
+        text, self.version = Preprocess(text)
 
         logger.debug('Input after pre-processor : "%s"' % (text))
 
