@@ -185,3 +185,24 @@ class Context(object):
             tex_obj = self.texture_objects[tex_name]
             tex_obj.initialized = data != None
             tex_obj.modified = True
+
+    def glTexImage3D(self, target, level, internalformat, width, height, depth, border, format, type, data):
+        tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
+        if self._check_texture_name(tex_name):
+            tex_obj = self.texture_objects[tex_name]
+            tex_obj.mipmap = level != 0
+            if level == 0:
+                tex_obj.internalformat = internalformat
+                tex_obj.width = width
+                tex_obj.height = height
+                tex_obj.depth = depth
+                tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
+            tex_obj.initialized = data != None
+            tex_obj.modified = True
+
+    def glTexSubImage3D(self, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, data):
+        tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
+        if self._check_texture_name(tex_name):
+            tex_obj = self.texture_objects[tex_name]
+            tex_obj.initialized = data != None
+            tex_obj.modified = True
