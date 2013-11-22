@@ -332,9 +332,9 @@ class TestFunction(unittest.TestCase):
     def test_function_definition2(self):
         sp = ShaderParser()
         sp.parse('''
-        #ifdef GL_ES
+#ifdef GL_ES
         precision mediump float;
-        #endif
+#endif
         uniform sampler2D texChars;
         varying vec2 vTexCoord;
         void main(void)
@@ -369,9 +369,9 @@ class TestFunction(unittest.TestCase):
     def test_function_definition3(self):
         sp = ShaderParser()
         sp.parse('''
-        #ifdef GL_ES
+#ifdef GL_ES
         precision highp float;
-        #endif
+#endif
         attribute vec4 myVertex;
         varying vec2 vTexCoord;
         void main(float v, int k)
@@ -404,9 +404,9 @@ class TestFunction(unittest.TestCase):
     def test_function_definition4(self):
         sp = ShaderParser()
         sp.parse('''
-        #ifdef GL_ES
+#ifdef GL_ES
         precision mediump float;
-        #endif
+#endif
         varying vec2 texcoord0;
         uniform sampler2D tex0;
         uniform vec3 fragmentColorVP;
@@ -496,12 +496,12 @@ class TestFunction(unittest.TestCase):
 
         self.assertEqual(str(fun_def), 'vec3 calculate_normal(in vec2 tc)\n{\n    return vec3(tc, 0.1);\n}')
 
-from GLESInterface import Interface as GLES
 from GLESEnum import Enum
 
 class TestTextures(unittest.TestCase):
 
     def test_pixel_store(self):
+        from GLESTextureCollector import TextureCollector as GLES
         gles = GLES()
 
         # check the initial states
@@ -526,6 +526,7 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGet(Enum.GL_UNPACK_ALIGNMENT), 8)
 
     def test_bind_texture(self):
+        from GLESTextureCollector import TextureCollector as GLES
         gles = GLES()
 
         # check the initial state
@@ -560,6 +561,7 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tex_obj, None)
 
     def test_tex_storage_2d(self):
+        from GLESTextureCollector import TextureCollector as GLES
         gles = GLES()
 
         gles.glBindTexture(Enum.GL_TEXTURE_2D, 1)
@@ -591,6 +593,7 @@ class TestTextures(unittest.TestCase):
         self.assertNotEqual(tex_obj, None)
 
     def test_tex_storage_3d(self):
+        from GLESTextureCollector import TextureCollector as GLES
         gles = GLES()
 
         gles.glBindTexture(Enum.GL_TEXTURE_3D, 1)

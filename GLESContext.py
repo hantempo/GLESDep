@@ -125,17 +125,3 @@ class Context(object):
             tex_obj.height = height
             tex_obj.depth = depth
             tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
-
-class Interface(object):
-
-    def __init__(self):
-
-        self.current_context = Context()
-
-    def __getattr__(self, attr):
-
-        if not self.current_context:
-            logger.error('No current context')
-            return None
-
-        return getattr(self.current_context, attr)
