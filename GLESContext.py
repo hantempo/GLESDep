@@ -95,6 +95,24 @@ class Context(object):
     def glPixelStorei(self, pname, param):
         self.states[pname] = param
 
+    def glActiveTexture(self, texture):
+        old_tex_unit = self.states[Enum.GL_ACTIVE_TEXTURE]
+        if texture == old_tex_unit:
+            return
+
+        # save texture binding states for the old texture unit
+        old_tex_unit_obj = self.texture_units[old_tex_unit]
+        for state_name in old_tex_unit_obj.states:
+            old_tex_unit_obj.states[state_name] = self.states[state_name]
+
+        # load texture binding states from the new texture unit
+        new_tex_unit_obj = self.texture_units[texture]
+        for state_name in new_tex_unit_obj.states:
+            self.states[state_name] = new_tex_unit_obj.states[state_name]
+
+        # switch the texture unit
+        self.states[Enum.GL_ACTIVE_TEXTURE] = texture
+
     def glGetTexParameter(self, target, pname):
         tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
         if self._check_texture_name(tex_name):

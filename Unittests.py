@@ -501,7 +501,7 @@ from GLESEnum import Enum
 class TestTextures(unittest.TestCase):
 
     def test_pixel_store(self):
-        from GLESTextureCollector import TextureCollector as GLES
+        from GLESContext import Context as GLES
         gles = GLES()
 
         # check the initial states
@@ -526,7 +526,7 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGet(Enum.GL_UNPACK_ALIGNMENT), 8)
 
     def test_bind_texture(self):
-        from GLESTextureCollector import TextureCollector as GLES
+        from GLESContext import Context as GLES
         gles = GLES()
 
         # check the initial state
@@ -561,7 +561,7 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tex_obj, None)
 
     def test_tex_storage_2d(self):
-        from GLESTextureCollector import TextureCollector as GLES
+        from GLESContext import Context as GLES
         gles = GLES()
 
         gles.glBindTexture(Enum.GL_TEXTURE_2D, 1)
@@ -593,7 +593,7 @@ class TestTextures(unittest.TestCase):
         self.assertNotEqual(tex_obj, None)
 
     def test_tex_storage_3d(self):
-        from GLESTextureCollector import TextureCollector as GLES
+        from GLESContext import Context as GLES
         gles = GLES()
 
         gles.glBindTexture(Enum.GL_TEXTURE_3D, 1)
@@ -622,6 +622,41 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D_ARRAY, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
         tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
         self.assertNotEqual(tex_obj, None)
+
+    def test_active_texture(self):
+        from GLESContext import Context as GLES
+        gles = GLES()
+
+        # check the initial state
+        self.assertEqual(gles.glGet(Enum.GL_ACTIVE_TEXTURE), Enum.GL_TEXTURE0)
+
+        # try to bind a texture object to the old texture unit
+        gles.glBindTexture(Enum.GL_TEXTURE_3D, 1)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
+        self.assertNotEqual(tex_obj, None)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D)
+        self.assertEqual(tex_obj, None)
+
+        # switch to a new texture unit and check the initial states
+        gles.glActiveTexture(Enum.GL_TEXTURE3)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
+        self.assertEqual(tex_obj, None)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D)
+        self.assertEqual(tex_obj, None)
+
+        # try to bind a new texture object to the new texture unit
+        gles.glBindTexture(Enum.GL_TEXTURE_2D, 1)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D)
+        self.assertNotEqual(tex_obj, None)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
+        self.assertEqual(tex_obj, None)
+
+        # switch back to the old texture unit and make sure its states are restored
+        gles.glActiveTexture(Enum.GL_TEXTURE0)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
+        self.assertNotEqual(tex_obj, None)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D)
+        self.assertEqual(tex_obj, None)
 
 if __name__ == '__main__':
     import logging
