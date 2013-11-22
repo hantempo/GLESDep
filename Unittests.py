@@ -852,7 +852,7 @@ class TestTextures(unittest.TestCase):
 
         # try to set the data for a cubemap texture
         gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 2)
-        gles.glCompressedTexImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, Enum.GL_COMPRESSED_RGB8_ETC2, 1, 1, 0, 8, '0000'.decode('hex'))
+        gles.glCompressedTexImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, Enum.GL_COMPRESSED_RGB8_ETC2, 1, 1, 0, 8, '0000111122223333'.decode('hex'))
         tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_CUBE_MAP)
         self.assertEqual(tex_obj.type, Enum.GL_TEXTURE_CUBE_MAP)
         self.assertEqual(tex_obj.mipmap, False)
@@ -863,6 +863,72 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tex_obj.initialized, True)
         self.assertEqual(tex_obj.modified, True)
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
+
+    def test_compressed_tex_image_3D(self):
+        from GLESContext import Context as GLES
+        gles = GLES()
+
+        # bind and set format and dimensions for an empty 2D array texture
+        gles.glBindTexture(Enum.GL_TEXTURE_2D_ARRAY, 10)
+        gles.glCompressedTexImage3D(Enum.GL_TEXTURE_2D_ARRAY, 0, Enum.GL_ETC1_RGB8_OES, 2, 2, 10, 0, 80, None)
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_2D_ARRAY)
+        self.assertEqual(tex_obj.type, Enum.GL_TEXTURE_2D_ARRAY)
+        self.assertEqual(tex_obj.mipmap, False)
+        self.assertEqual(tex_obj.internalformat, Enum.GL_ETC1_RGB8_OES)
+        self.assertEqual(tex_obj.width, 2)
+        self.assertEqual(tex_obj.height, 2)
+        self.assertEqual(tex_obj.depth, 10)
+        self.assertEqual(tex_obj.initialized, False)
+        self.assertEqual(tex_obj.modified, True)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D_ARRAY, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
+
+        # reset the modification state
+        tex_obj.modified = False
+
+        # set level 1 with None data
+        gles.glCompressedTexImage3D(Enum.GL_TEXTURE_2D_ARRAY, 1, Enum.GL_ETC1_RGB8_OES, 1, 1, 5, 0, 40, None)
+        self.assertEqual(tex_obj.type, Enum.GL_TEXTURE_2D_ARRAY)
+        self.assertEqual(tex_obj.mipmap, True)
+        self.assertEqual(tex_obj.internalformat, Enum.GL_ETC1_RGB8_OES)
+        self.assertEqual(tex_obj.width, 2)
+        self.assertEqual(tex_obj.height, 2)
+        self.assertEqual(tex_obj.depth, 10)
+        self.assertEqual(tex_obj.initialized, False)
+        self.assertEqual(tex_obj.modified, True)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D_ARRAY, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
+
+        # reset the modification state
+        tex_obj.modified = False
+
+        # set level 1 with data
+        gles.glCompressedTexSubImage3D(Enum.GL_TEXTURE_2D_ARRAY, 1, 0, 0, 1, 1, 1, 1, Enum.GL_ETC1_RGB8_OES, 8, 'FFFF222233338888'.decode('hex'))
+        self.assertEqual(tex_obj.type, Enum.GL_TEXTURE_2D_ARRAY)
+        self.assertEqual(tex_obj.mipmap, True)
+        self.assertEqual(tex_obj.internalformat, Enum.GL_ETC1_RGB8_OES)
+        self.assertEqual(tex_obj.width, 2)
+        self.assertEqual(tex_obj.height, 2)
+        self.assertEqual(tex_obj.depth, 10)
+        self.assertEqual(tex_obj.initialized, True)
+        self.assertEqual(tex_obj.modified, True)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D_ARRAY, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
+
+        # check 3d texture target isn't affected
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
+        self.assertEqual(tex_obj, None)
+
+        # try to set the data for a 3D texture
+        gles.glBindTexture(Enum.GL_TEXTURE_3D, 2)
+        gles.glCompressedTexImage3D(Enum.GL_TEXTURE_3D, 0, Enum.GL_COMPRESSED_RGBA8_ETC2_EAC, 1, 1, 1, 0, 16, ('00' * 16).decode('hex'))
+        tex_obj = gles.GetBoundTexture(Enum.GL_TEXTURE_3D)
+        self.assertEqual(tex_obj.type, Enum.GL_TEXTURE_3D)
+        self.assertEqual(tex_obj.mipmap, False)
+        self.assertEqual(tex_obj.internalformat, Enum.GL_COMPRESSED_RGBA8_ETC2_EAC)
+        self.assertEqual(tex_obj.width, 1)
+        self.assertEqual(tex_obj.height, 1)
+        self.assertEqual(tex_obj.depth, 1)
+        self.assertEqual(tex_obj.initialized, True)
+        self.assertEqual(tex_obj.modified, True)
+        self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_3D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
 if __name__ == '__main__':
     import logging

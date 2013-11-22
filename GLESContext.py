@@ -203,3 +203,9 @@ class Context(object):
 
     def glCompressedTexSubImage2D(self, target, level, xoffset, yoffset, width, height, format, imageSize, data):
         self._SetSubTexture(target, level, data)
+
+    def glCompressedTexImage3D(self, target, level, internalformat, width, height, depth, border, imageSize, data):
+        self._SetTexture(target, level, internalformat, width, height, depth, data)
+
+    def glCompressedTexSubImage3D(self, target, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data):
+        self._SetSubTexture(target, level, data)
