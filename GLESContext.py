@@ -7,9 +7,22 @@ from GLESEnum import Enum
 
 class TextureObject(object):
 
-    def __init__(self):
+    def __init__(self, type):
 
+        # 2D, 2D array, 2D or cube map
+        self.type = type
+
+        # whether this texture object is mipmapped.
+        # true if any level other than level 0 is set
+        self.mipmap = False
+
+        # whether the data has been initialized with non-null pointers or other buffer objects
+        # true if the data of any level is set
         self.initialized = False
+
+        # whether the data, dimensions and internal format has been modified since the last checking point, used to identify a texture instance
+        self.modified = False
+
         self.states = {
             Enum.GL_TEXTURE_IMMUTABLE_FORMAT : 0,
         }
@@ -72,6 +85,12 @@ class Context(object):
         Enum.GL_TEXTURE_2D_ARRAY : Enum.GL_TEXTURE_BINDING_2D_ARRAY,
         Enum.GL_TEXTURE_3D : Enum.GL_TEXTURE_BINDING_3D,
         Enum.GL_TEXTURE_CUBE_MAP : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
+        Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
+        Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_Y : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
+        Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_Z : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
+        Enum.GL_TEXTURE_CUBE_MAP_NEGATIVE_X : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
+        Enum.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
+        Enum.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z : Enum.GL_TEXTURE_BINDING_CUBE_MAP,
     }
 
     def _check_texture_name(self, tex_name):
@@ -120,26 +139,49 @@ class Context(object):
 
     def glBindTexture(self, target, texture):
         self.states[self.TEXTURE_TARGET_BINDING[target]] = texture
-        self.texture_objects[texture] = TextureObject()
+        self.texture_objects[texture] = TextureObject(type=target)
 
     def glTexStorage2D(self, target, levels, internalformat, width, height):
         tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
         if self._check_texture_name(tex_name):
             tex_obj = self.texture_objects[tex_name]
-            tex_obj.levels = levels
+            tex_obj.mipmap = levels > 1
             tex_obj.internalformat = internalformat
             tex_obj.width = width
             tex_obj.height = height
             tex_obj.depth = 1
             tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
+            tex_obj.modified = True
 
     def glTexStorage3D(self, target, levels, internalformat, width, height, depth):
         tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
         if self._check_texture_name(tex_name):
             tex_obj = self.texture_objects[tex_name]
-            tex_obj.levels = levels
+            tex_obj.mipmap = levels > 1
             tex_obj.internalformat = internalformat
             tex_obj.width = width
             tex_obj.height = height
             tex_obj.depth = depth
             tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
+            tex_obj.modified = True
+
+    def glTexImage2D(self, target, level, internalformat, width, height, border, format, type, data):
+        tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
+        if self._check_texture_name(tex_name):
+            tex_obj = self.texture_objects[tex_name]
+            tex_obj.mipmap = level != 0
+            if level == 0:
+                tex_obj.internalformat = internalformat
+                tex_obj.width = width
+                tex_obj.height = height
+                tex_obj.depth = 1
+                tex_obj.states[Enum.GL_TEXTURE_IMMUTABLE_FORMAT] = 1
+            tex_obj.initialized = data != None
+            tex_obj.modified = True
+
+    def glTexSubImage2D(self, target, level, xoffset, yoffset, width, height, format, type, data):
+        tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]
+        if self._check_texture_name(tex_name):
+            tex_obj = self.texture_objects[tex_name]
+            tex_obj.initialized = data != None
+            tex_obj.modified = True
