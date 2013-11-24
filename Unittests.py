@@ -930,6 +930,22 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tex_obj.modified, True)
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_3D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
+    def test_texture_collector(self):
+        from GLESContext import Context as GLES
+        gles = GLES()
+
+        from Tools.TextureCollector import TextureCollector
+        tc = TextureCollector()
+
+        # create a 2D array texture
+        gles.glBindTexture(Enum.GL_TEXTURE_2D_ARRAY, 1)
+        gles.glCompressedTexImage2D(Enum.GL_TEXTURE_2D_ARRAY, 0, Enum.GL_COMPRESSED_RGB8_ETC2, 1, 1, 0, 8, '0000111122223333'.decode('hex'))
+
+        # collect textures
+        tc.collect(gles)
+        self.assertEqual(len(tc.textures), 1)
+        self.assertTrue('0001_0000' in tc.textures.index)
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)

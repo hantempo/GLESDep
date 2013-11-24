@@ -7,6 +7,12 @@ from GLESEnum import Enum
 
 class TextureObject(object):
 
+    # list of attributes to be recorded
+    Attributes = ['type',
+        'width', 'height', 'depth',
+        'internalformat',
+        'mipmap', 'initialized']
+
     def __init__(self, type):
 
         # 2D, 2D array, 2D or cube map
