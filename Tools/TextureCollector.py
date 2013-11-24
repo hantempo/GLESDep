@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 import pandas, collections
 
 from GLESContext import TextureObject
+from GLESEnum import Enum
 
 class TextureCollector(object):
 
@@ -26,7 +27,11 @@ class TextureCollector(object):
 
             tex_attrs = collections.OrderedDict()
             for attr in TextureObject.Attributes:
-                tex_attrs[attr] = getattr(tex_obj, attr)
+                attr_value = getattr(tex_obj, attr)
+                if attr in ['type', 'internalformat']:
+                    attr_value = Enum.names[attr_value]
+                tex_attrs[attr] = attr_value
 
             df = pandas.DataFrame(tex_attrs, index=[self.generate_index(tex_name)])
             self.textures = self.textures.append(df)
+            tex_obj.modified = False

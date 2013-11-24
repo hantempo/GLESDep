@@ -145,7 +145,8 @@ class Context(object):
 
     def glBindTexture(self, target, texture):
         self.states[self.TEXTURE_TARGET_BINDING[target]] = texture
-        self.texture_objects[texture] = TextureObject(type=target)
+        if (texture not in self.texture_objects) or (self.texture_objects[texture].type != target):
+            self.texture_objects[texture] = TextureObject(type=target)
 
     def glTexStorage2D(self, target, levels, internalformat, width, height):
         tex_name = self.states[self.TEXTURE_TARGET_BINDING[target]]

@@ -945,6 +945,46 @@ class TestTextures(unittest.TestCase):
         tc.collect(gles)
         self.assertEqual(len(tc.textures), 1)
         self.assertTrue('0001_0000' in tc.textures.index)
+        self.assertEqual(tc.textures.type['0001_0000'], 'GL_TEXTURE_2D_ARRAY')
+        self.assertEqual(tc.textures.width['0001_0000'], 1)
+        self.assertEqual(tc.textures.height['0001_0000'], 1)
+        self.assertEqual(tc.textures.depth['0001_0000'], 1)
+        self.assertEqual(tc.textures.internalformat['0001_0000'], 'GL_COMPRESSED_RGB8_ETC2')
+        self.assertEqual(tc.textures.mipmap['0001_0000'], False)
+        self.assertEqual(tc.textures.initialized['0001_0000'], True)
+
+        # create a mipmapped but empty cubemap texture
+        gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 3)
+        gles.glTexImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, Enum.GL_RGB8, 4, 4, 0, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, None)
+        gles.glTexImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, Enum.GL_RGB8, 2, 2, 0, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, None)
+
+        # collect textures
+        tc.collect(gles)
+        self.assertEqual(len(tc.textures), 2)
+        self.assertTrue('0003_0000' in tc.textures.index)
+        self.assertEqual(tc.textures.type['0003_0000'], 'GL_TEXTURE_CUBE_MAP')
+        self.assertEqual(tc.textures.width['0003_0000'], 4)
+        self.assertEqual(tc.textures.height['0003_0000'], 4)
+        self.assertEqual(tc.textures.depth['0003_0000'], 1)
+        self.assertEqual(tc.textures.internalformat['0003_0000'], 'GL_RGB8')
+        self.assertEqual(tc.textures.mipmap['0003_0000'], True)
+        self.assertEqual(tc.textures.initialized['0003_0000'], False)
+
+        # modify the cubemap texture
+        gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 3)
+        gles.glTexSubImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, 0, 0, 1, 1, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, '001122'.decode('hex'))
+
+        # collect textures
+        tc.collect(gles)
+        self.assertEqual(len(tc.textures), 3)
+        self.assertTrue('0003_0001' in tc.textures.index)
+        self.assertEqual(tc.textures.type['0003_0001'], 'GL_TEXTURE_CUBE_MAP')
+        self.assertEqual(tc.textures.width['0003_0001'], 4)
+        self.assertEqual(tc.textures.height['0003_0001'], 4)
+        self.assertEqual(tc.textures.depth['0003_0001'], 1)
+        self.assertEqual(tc.textures.internalformat['0003_0001'], 'GL_RGB8')
+        self.assertEqual(tc.textures.mipmap['0003_0001'], True)
+        self.assertEqual(tc.textures.initialized['0003_0001'], True)
 
 if __name__ == '__main__':
     import logging
