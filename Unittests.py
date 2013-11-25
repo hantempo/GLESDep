@@ -1027,6 +1027,29 @@ class TestShaders(unittest.TestCase):
         self.assertEqual(shader.source, source)
         self.assertEqual(shader.modified, True)
 
+    def test_create_program(self, ret=None):
+        gles = GLES()
+        self.assertEqual(gles.glIsProgram(1), False)
+        self.assertEqual(gles.glCreateProgram(1), 1)
+        self.assertEqual(gles.glIsProgram(1), True)
+
+        self.assertEqual(gles.glGetAttachedShaders(1, 2), (0, []))
+
+        # attach an invalid shader
+        self.assertEqual(gles.glAttachShader(1, 2), None)
+        self.assertEqual(gles.glGetAttachedShaders(1, 2), (0, []))
+
+        # attach a vertex shader
+        self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
+        self.assertEqual(gles.glAttachShader(1, 2), None)
+        self.assertEqual(gles.glGetAttachedShaders(1, 2), (1, [2]))
+
+        # attach a fragment shader
+        self.assertEqual(gles.glCreateShader(Enum.GL_FRAGMENT_SHADER, 3), 3)
+        self.assertEqual(gles.glAttachShader(1, 3), None)
+        self.assertEqual(gles.glGetAttachedShaders(1, 2), (2, [2, 3]))
+        self.assertEqual(gles.glGetAttachedShaders(1, 1), (2, [2]))
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)

@@ -12,6 +12,11 @@ class ShaderObject(object):
         self.source = ''
         self.modified = False
 
+class ProgramObject(object):
+
+    def __init__(self):
+        self.attached_shaders = []
+
 class TextureObject(object):
 
     # list of attributes to be recorded
@@ -85,6 +90,9 @@ class Context(object):
         # shader states
         self.shader_objects = {}
 
+        # program states
+        self.program_objects = {}
+
     # query methods
     def glGet(self, pname):
         return self.states[pname]
@@ -116,6 +124,32 @@ class Context(object):
                 shaderObj.source += string[index]
 
         shaderObj.modified = True
+
+    # programs
+
+    def glCreateProgram(self, ret=None):
+        self.program_objects[ret] = ProgramObject()
+        return ret
+
+    def glIsProgram(self, program):
+        return program in self.program_objects
+
+    def glAttachShader(self, program, shader):
+        if program not in self.program_objects:
+            return
+
+        if shader not in self.shader_objects:
+            return
+
+        programObj = self.program_objects[program]
+        programObj.attached_shaders.append(shader)
+
+    def glGetAttachedShaders(self, program, maxCount):
+        if program not in self.program_objects:
+            return 0, None
+
+        programObj = self.program_objects[program]
+        return len(programObj.attached_shaders), programObj.attached_shaders[:maxCount]
 
     # textures
 
