@@ -109,6 +109,17 @@ class Context(object):
         self.shader_objects[ret] = ShaderObject(shaderType)
         return ret
 
+    def glIsShader(self, shader):
+        return shader in self.shader_objects
+
+    def glGetShader(self, shader, pname):
+        if self.glIsShader(shader):
+            shader = self.shader_objects[shader]
+            if pname == Enum.GL_SHADER_TYPE:
+                return shader.type
+            elif pname == Enum.GL_SHADER_SOURCE_LENGTH:
+                return len(shader.source)
+
     def glShaderSource(self, shader, count, string, length):
         if shader not in self.shader_objects:
             return

@@ -127,4 +127,6 @@ Enum = enum(
 
     GL_VERTEX_SHADER                           = 0x8B31,
     GL_FRAGMENT_SHADER                         = 0x8B30,
+    GL_SHADER_TYPE                             = 0x8B4F,
+    GL_SHADER_SOURCE_LENGTH                    = 0x8B88,
 )

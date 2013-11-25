@@ -991,20 +991,16 @@ class TestShaders(unittest.TestCase):
 
     def test_create_shader(self):
         gles = GLES()
+        self.assertEqual(gles.glIsShader(2), False)
         self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
-
-        self.assertEqual(gles.GetShaderObject(1), None)
-        self.assertNotEqual(gles.GetShaderObject(2), None)
-        shader = gles.GetShaderObject(2)
-        self.assertEqual(shader.type, Enum.GL_VERTEX_SHADER)
+        self.assertEqual(gles.glIsShader(2), True)
+        self.assertEqual(gles.glGetShader(2, Enum.GL_SHADER_TYPE), Enum.GL_VERTEX_SHADER)
 
         self.assertEqual(gles.glCreateShader(Enum.GL_FRAGMENT_SHADER, 1), 1)
-        self.assertNotEqual(gles.GetShaderObject(1), None)
-        self.assertNotEqual(gles.GetShaderObject(2), None)
-        shader = gles.GetShaderObject(1)
-        self.assertEqual(shader.type, Enum.GL_FRAGMENT_SHADER)
-        shader = gles.GetShaderObject(2)
-        self.assertEqual(shader.type, Enum.GL_VERTEX_SHADER)
+        self.assertEqual(gles.glIsShader(1), True)
+        self.assertEqual(gles.glIsShader(2), True)
+        self.assertEqual(gles.glGetShader(1, Enum.GL_SHADER_TYPE), Enum.GL_FRAGMENT_SHADER)
+        self.assertEqual(gles.glGetShader(2, Enum.GL_SHADER_TYPE), Enum.GL_VERTEX_SHADER)
 
     def test_shader_source(self):
         gles = GLES()
@@ -1017,6 +1013,7 @@ class TestShaders(unittest.TestCase):
         source = "attribute vec3 fresnet;uniform float time;"
         self.assertEqual(gles.glShaderSource(2, 2, ['attribute vec3 fresnet;', 'uniform float time;'], None), None)
         self.assertEqual(shader.source, source)
+        self.assertEqual(gles.glGetShader(2, Enum.GL_SHADER_SOURCE_LENGTH), len(source))
         self.assertEqual(shader.modified, True)
 
         # reset the modification flag
