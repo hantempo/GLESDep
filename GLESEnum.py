@@ -124,4 +124,7 @@ Enum = enum(
     GL_UNPACK_SKIP_PIXELS                      = 0x0CF4,
     GL_UNPACK_SKIP_IMAGES                      = 0x806D,
     GL_UNPACK_ALIGNMENT                        = 0x0CF5,
+
+    GL_VERTEX_SHADER                           = 0x8B31,
+    GL_FRAGMENT_SHADER                         = 0x8B30,
 )

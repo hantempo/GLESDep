@@ -18,12 +18,12 @@ class TestPreprocessor(unittest.TestCase):
 
     def test_gl_es(self):
         input = '''  \t #version 300  es
-#ifndef GL_ES
+        #ifndef GL_ES
         uniform lowp sampler2D texture_unit0;
-#endif
-#ifdef GL_ES
+        #endif
+        #ifdef GL_ES
         varying samplerCube texture_unit0;
-#endif
+        #endif
 '''
         expected_output = '''
 
@@ -497,6 +497,7 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(str(fun_def), 'vec3 calculate_normal(in vec2 tc)\n{\n    return vec3(tc, 0.1);\n}')
 
 from GLESEnum import Enum
+from GLESContext import Context as GLES
 
 class TestTextures(unittest.TestCase):
 
@@ -985,6 +986,46 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tc.textures.internalformat['0003_0001'], 'GL_RGB8')
         self.assertEqual(tc.textures.mipmap['0003_0001'], True)
         self.assertEqual(tc.textures.initialized['0003_0001'], True)
+
+class TestShaders(unittest.TestCase):
+
+    def test_create_shader(self):
+        gles = GLES()
+        self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
+
+        self.assertEqual(gles.GetShaderObject(1), None)
+        self.assertNotEqual(gles.GetShaderObject(2), None)
+        shader = gles.GetShaderObject(2)
+        self.assertEqual(shader.type, Enum.GL_VERTEX_SHADER)
+
+        self.assertEqual(gles.glCreateShader(Enum.GL_FRAGMENT_SHADER, 1), 1)
+        self.assertNotEqual(gles.GetShaderObject(1), None)
+        self.assertNotEqual(gles.GetShaderObject(2), None)
+        shader = gles.GetShaderObject(1)
+        self.assertEqual(shader.type, Enum.GL_FRAGMENT_SHADER)
+        shader = gles.GetShaderObject(2)
+        self.assertEqual(shader.type, Enum.GL_VERTEX_SHADER)
+
+    def test_shader_source(self):
+        gles = GLES()
+        self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
+        shader = gles.GetShaderObject(2)
+        self.assertEqual(shader.source, '')
+        self.assertEqual(shader.modified, False)
+
+        # set the shader source
+        source = "attribute vec3 fresnet;uniform float time;"
+        self.assertEqual(gles.glShaderSource(2, 2, ['attribute vec3 fresnet;', 'uniform float time;'], None), None)
+        self.assertEqual(shader.source, source)
+        self.assertEqual(shader.modified, True)
+
+        # reset the modification flag
+        shader.modified = False
+
+        # re-set the shader source
+        self.assertEqual(gles.glShaderSource(2, 1, [source + 'dummy'], [len(source)]), None)
+        self.assertEqual(shader.source, source)
+        self.assertEqual(shader.modified, True)
 
 if __name__ == '__main__':
     import logging

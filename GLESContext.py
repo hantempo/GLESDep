@@ -5,6 +5,13 @@ import collections
 
 from GLESEnum import Enum
 
+class ShaderObject(object):
+
+    def __init__(self, type):
+        self.type = type
+        self.source = ''
+        self.modified = False
+
 class TextureObject(object):
 
     # list of attributes to be recorded
@@ -75,13 +82,40 @@ class Context(object):
         self.texture_units = collections.defaultdict(TextureUnit)
         self.texture_objects = {}
 
-    #@property
-    #def active_texture_unit(self):
-        #return self.texture_units[self.states[Enum.GL_ACTIVE_TEXTURE]]
+        # shader states
+        self.shader_objects = {}
 
     # query methods
     def glGet(self, pname):
         return self.states[pname]
+
+    # shaders
+
+    def GetShaderObject(self, name):
+        if name in self.shader_objects:
+            return self.shader_objects[name]
+        else:
+            return None
+
+    def glCreateShader(self, shaderType, ret=None):
+        self.shader_objects[ret] = ShaderObject(shaderType)
+        return ret
+
+    def glShaderSource(self, shader, count, string, length):
+        if shader not in self.shader_objects:
+            return
+        shaderObj = self.shader_objects[shader]
+        if not shaderObj:
+            return
+
+        shaderObj.source = ''
+        for index in range(count):
+            if length:
+                shaderObj.source += string[index][:length[index]]
+            else:
+                shaderObj.source += string[index]
+
+        shaderObj.modified = True
 
     # textures
 
