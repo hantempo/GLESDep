@@ -30,7 +30,7 @@ def Preprocess(input_text):
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
         #
-        command = ['cpp', '-DGL_ES', '-traditional-cpp']
+        command = ['cpp', '-DGL_ES']
         logger.debug('Preprocess Command : %s' % ' '.join(command))
         pipe = Popen(command, stdin=PIPE, stdout=PIPE, universal_newlines=True)
         text, error = pipe.communicate(input=input_text)
