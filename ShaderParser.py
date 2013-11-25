@@ -30,8 +30,12 @@ def Preprocess(input_text):
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
         #
-        pipe = Popen(['cpp', '-DGL_ES', '-traditional-cpp'], stdin=PIPE, stdout=PIPE, universal_newlines=True)
-        text = pipe.communicate(input=input_text)[0]
+        command = ['cpp', '-DGL_ES', '-traditional-cpp']
+        logger.debug('Preprocess Command : %s' % ' '.join(command))
+        pipe = Popen(command, stdin=PIPE, stdout=PIPE, universal_newlines=True)
+        text, error = pipe.communicate(input=input_text)
+        if error:
+            logger.error('Preprocess Error : %s' % error)
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
             'Make sure its path was passed correctly\n' +
