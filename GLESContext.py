@@ -7,6 +7,9 @@ from GLESEnum import Enum
 
 class ShaderObject(object):
 
+    # list of attributes to be recorded
+    Attributes = ['type', 'filename']
+
     def __init__(self, type):
         self.type = type
         self.source = ''
@@ -102,12 +105,6 @@ class Context(object):
 
     # shaders
 
-    def GetShaderObject(self, name):
-        if name in self.shader_objects:
-            return self.shader_objects[name]
-        else:
-            return None
-
     def glCreateShader(self, shaderType, ret=None):
         self.shader_objects[ret] = ShaderObject(shaderType)
         return ret
@@ -173,6 +170,11 @@ class Context(object):
     def glUseProgram(self, program):
         if self.glIsProgram(program):
             self.states[Enum.GL_CURRENT_PROGRAM] = program
+
+    def GetCurrentProgram(self):
+        current_program = self.glGet(Enum.GL_CURRENT_PROGRAM)
+        if self.glIsProgram(current_program):
+            return self.program_objects[current_program]
 
     # textures
 

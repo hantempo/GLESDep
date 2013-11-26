@@ -1033,6 +1033,13 @@ class TestShaders(unittest.TestCase):
 
     def test_shader_collector(self):
         gles = GLES()
+        self.assertEqual(gles.GetCurrentProgram(), None)
+
+        from Tools.ShaderCollector import ShaderCollector
+        sc = ShaderCollector()
+        sc.collect(gles)
+        self.assertEqual(len(sc.shaders), 0)
+
         vs_source = "attribute vec3 fresnet;uniform float time;"
         fs_source = "uniform int anything;"
         self.assertEqual(gles.glCreateProgram(1), 1)
@@ -1044,6 +1051,31 @@ class TestShaders(unittest.TestCase):
         self.assertEqual(gles.glAttachShader(1, 3), None)
         self.assertEqual(gles.glUseProgram(1), None)
         self.assertEqual(gles.glGet(Enum.GL_CURRENT_PROGRAM), 1)
+        self.assertNotEqual(gles.GetCurrentProgram(), None)
+
+        sc.collect(gles)
+        self.assertEqual(len(sc.shaders), 2)
+        self.assertTrue('0002_0000' in sc.shaders.index)
+        self.assertEqual(sc.shaders.type['0002_0000'], 'GL_VERTEX_SHADER')
+        self.assertEqual(sc.shaders.filename['0002_0000'], 'shaders/0002_0000.vertex')
+        self.assertTrue('0003_0000' in sc.shaders.index)
+        self.assertEqual(sc.shaders.type['0003_0000'], 'GL_FRAGMENT_SHADER')
+        self.assertEqual(sc.shaders.filename['0003_0000'], 'shaders/0003_0000.fragment')
+
+        with open(sc.shaders.filename['0002_0000']) as input:
+            self.assertEqual(input.read(), vs_source)
+        with open(sc.shaders.filename['0003_0000']) as input:
+            self.assertEqual(input.read(), fs_source)
+
+        fs_source = "uniform int anything;varying float anything;"
+        self.assertEqual(gles.glShaderSource(3, 1, [fs_source], None), None)
+        sc.collect(gles)
+        self.assertEqual(len(sc.shaders), 3)
+        self.assertTrue('0003_0001' in sc.shaders.index)
+        self.assertEqual(sc.shaders.type['0003_0001'], 'GL_FRAGMENT_SHADER')
+        self.assertEqual(sc.shaders.filename['0003_0001'], 'shaders/0003_0001.fragment')
+        with open(sc.shaders.filename['0003_0001']) as input:
+            self.assertEqual(input.read(), fs_source)
 
 if __name__ == '__main__':
     import logging
