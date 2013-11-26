@@ -81,6 +81,9 @@ class Context(object):
             Enum.GL_TEXTURE_BINDING_2D_ARRAY : 0,
             Enum.GL_TEXTURE_BINDING_3D : 0,
             Enum.GL_TEXTURE_BINDING_CUBE_MAP : 0,
+
+            # shader states
+            Enum.GL_CURRENT_PROGRAM : 0,
         }
 
         # texture states
@@ -119,6 +122,11 @@ class Context(object):
                 return shader.type
             elif pname == Enum.GL_SHADER_SOURCE_LENGTH:
                 return len(shader.source)
+
+    def glGetShaderSource(self, shader):
+        if self.glIsShader(shader):
+            shader = self.shader_objects[shader]
+            return shader.source
 
     def glShaderSource(self, shader, count, string, length):
         if shader not in self.shader_objects:
@@ -161,6 +169,10 @@ class Context(object):
 
         programObj = self.program_objects[program]
         return len(programObj.attached_shaders), programObj.attached_shaders[:maxCount]
+
+    def glUseProgram(self, program):
+        if self.glIsProgram(program):
+            self.states[Enum.GL_CURRENT_PROGRAM] = program
 
     # textures
 

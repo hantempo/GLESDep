@@ -502,7 +502,6 @@ from GLESContext import Context as GLES
 class TestTextures(unittest.TestCase):
 
     def test_pixel_store(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # check the initial states
@@ -527,7 +526,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGet(Enum.GL_UNPACK_ALIGNMENT), 8)
 
     def test_bind_texture(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # check the initial state
@@ -564,7 +562,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tex_obj, None)
 
     def test_tex_storage_2d(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         gles.glBindTexture(Enum.GL_TEXTURE_2D, 1)
@@ -598,7 +595,6 @@ class TestTextures(unittest.TestCase):
         self.assertNotEqual(tex_obj, None)
 
     def test_tex_storage_3d(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         gles.glBindTexture(Enum.GL_TEXTURE_3D, 1)
@@ -632,7 +628,6 @@ class TestTextures(unittest.TestCase):
         self.assertNotEqual(tex_obj, None)
 
     def test_active_texture(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # check the initial state
@@ -668,7 +663,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tex_obj, None)
 
     def test_tex_image_2D(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # bind and set format and dimensions for an empty 2D texture
@@ -734,7 +728,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
     def test_tex_image_3D(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # bind and set format and dimensions for an empty 2D array texture
@@ -800,7 +793,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_3D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
     def test_compressed_tex_image_2D(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # bind and set format and dimensions for an empty 2D texture
@@ -866,7 +858,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_2D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
     def test_compressed_tex_image_3D(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         # bind and set format and dimensions for an empty 2D array texture
@@ -932,7 +923,6 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_3D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
     def test_texture_collector(self):
-        from GLESContext import Context as GLES
         gles = GLES()
 
         from Tools.TextureCollector import TextureCollector
@@ -1005,26 +995,20 @@ class TestShaders(unittest.TestCase):
     def test_shader_source(self):
         gles = GLES()
         self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
-        shader = gles.GetShaderObject(2)
-        self.assertEqual(shader.source, '')
-        self.assertEqual(shader.modified, False)
+        self.assertEqual(gles.glGetShaderSource(2), '')
 
         # set the shader source
         source = "attribute vec3 fresnet;uniform float time;"
         self.assertEqual(gles.glShaderSource(2, 2, ['attribute vec3 fresnet;', 'uniform float time;'], None), None)
-        self.assertEqual(shader.source, source)
         self.assertEqual(gles.glGetShader(2, Enum.GL_SHADER_SOURCE_LENGTH), len(source))
-        self.assertEqual(shader.modified, True)
-
-        # reset the modification flag
-        shader.modified = False
+        self.assertEqual(gles.glGetShaderSource(2), source)
 
         # re-set the shader source
         self.assertEqual(gles.glShaderSource(2, 1, [source + 'dummy'], [len(source)]), None)
-        self.assertEqual(shader.source, source)
-        self.assertEqual(shader.modified, True)
+        self.assertEqual(gles.glGetShader(2, Enum.GL_SHADER_SOURCE_LENGTH), len(source))
+        self.assertEqual(gles.glGetShaderSource(2), source)
 
-    def test_create_program(self, ret=None):
+    def test_create_program(self):
         gles = GLES()
         self.assertEqual(gles.glIsProgram(1), False)
         self.assertEqual(gles.glCreateProgram(1), 1)
@@ -1046,6 +1030,20 @@ class TestShaders(unittest.TestCase):
         self.assertEqual(gles.glAttachShader(1, 3), None)
         self.assertEqual(gles.glGetAttachedShaders(1, 2), (2, [2, 3]))
         self.assertEqual(gles.glGetAttachedShaders(1, 1), (2, [2]))
+
+    def test_shader_collector(self):
+        gles = GLES()
+        vs_source = "attribute vec3 fresnet;uniform float time;"
+        fs_source = "uniform int anything;"
+        self.assertEqual(gles.glCreateProgram(1), 1)
+        self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
+        self.assertEqual(gles.glShaderSource(2, 2, ['attribute vec3 fresnet;', 'uniform float time;'], None), None)
+        self.assertEqual(gles.glCreateShader(Enum.GL_FRAGMENT_SHADER, 3), 3)
+        self.assertEqual(gles.glShaderSource(3, 1, [fs_source], None), None)
+        self.assertEqual(gles.glAttachShader(1, 2), None)
+        self.assertEqual(gles.glAttachShader(1, 3), None)
+        self.assertEqual(gles.glUseProgram(1), None)
+        self.assertEqual(gles.glGet(Enum.GL_CURRENT_PROGRAM), 1)
 
 if __name__ == '__main__':
     import logging
