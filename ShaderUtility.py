@@ -59,12 +59,11 @@ def Preprocess(input_text):
 
 def ConvertESSLToCGCCompilable(source):
     lines = source.splitlines()
+    # convert "#version 300 es" to "#version 300"
+    if re.match(version_declaration_pattern, lines[0]):
+        lines[0] = '#version 300\n#extension GL_NV_shadow : enable\n#extension GL_OES_texture_3D : enable'
+
     for i in range(len(lines)):
-
-        # convert "#version 300 es" to "#version 300"
-        if re.match(version_declaration_pattern, lines[i]):
-            lines[i] = '#version 300'
-
         # filter away layout qualifiers
         match = re.search(layour_qualifier_pattern, lines[i])
         if match:

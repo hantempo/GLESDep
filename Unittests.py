@@ -1117,6 +1117,8 @@ void main()
 
 CGC_COMPILIBILITY_OUTPUT = [
 '''#version 300
+#extension GL_NV_shadow : enable
+#extension GL_OES_texture_3D : enable
 in vec2 out_texcoord0;
 out vec4 frag_color;
 
@@ -1130,6 +1132,8 @@ void main()
 }''',
 
 '''#version 300
+#extension GL_NV_shadow : enable
+#extension GL_OES_texture_3D : enable
 uniform highp mat4 mvp;
 uniform highp mat4 mv;
 uniform highp mat4 shadow_matrix0;
