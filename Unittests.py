@@ -1,6 +1,7 @@
 import unittest
 
-from ShaderParser import ShaderParser, Preprocess
+from ShaderParser import ShaderParser
+from ShaderUtility import Preprocess
 
 class TestPreprocessor(unittest.TestCase):
 
@@ -1076,6 +1077,88 @@ class TestShaders(unittest.TestCase):
         self.assertEqual(sc.shaders.filename['0003_0001'], 'shaders/0003_0001.fragment')
         with open(sc.shaders.filename['0003_0001']) as input:
             self.assertEqual(input.read(), fs_source)
+
+CGC_COMPILIBILITY_INPUT = [
+# '#version 300 es' -> '#version 300'
+'''#version 300 es
+in vec2 out_texcoord0;
+out vec4 frag_color;
+
+uniform lowp sampler2D texture_unit0;
+uniform lowp vec3 color;
+
+void main()
+{
+    vec4 texel = texture( texture_unit0, out_texcoord0) * vec4( color, 1.0);
+    frag_color = vec4( texel.xyz, 0.0);
+}''',
+
+# filter away layout qualifiers
+'''#version 300 es
+uniform highp mat4 mvp;
+uniform highp mat4 mv;
+uniform highp mat4 shadow_matrix0;
+
+
+layout (location = 0) in vec3 in_position;
+
+out vec4 out_pos;
+out vec4 shadow_texcoord;
+
+void main()
+{
+    gl_Position = mvp * vec4( in_position, 1.0);
+
+    out_pos.xyz = in_position;
+    out_pos.w = -vec4(mv * vec4( in_position, 1.0)).z;
+    shadow_texcoord = shadow_matrix0 * vec4( in_position, 1.0);
+}'''
+]
+
+CGC_COMPILIBILITY_OUTPUT = [
+'''#version 300
+in vec2 out_texcoord0;
+out vec4 frag_color;
+
+uniform lowp sampler2D texture_unit0;
+uniform lowp vec3 color;
+
+void main()
+{
+    vec4 texel = texture( texture_unit0, out_texcoord0) * vec4( color, 1.0);
+    frag_color = vec4( texel.xyz, 0.0);
+}''',
+
+'''#version 300
+uniform highp mat4 mvp;
+uniform highp mat4 mv;
+uniform highp mat4 shadow_matrix0;
+
+
+in vec3 in_position;
+
+out vec4 out_pos;
+out vec4 shadow_texcoord;
+
+void main()
+{
+    gl_Position = mvp * vec4( in_position, 1.0);
+
+    out_pos.xyz = in_position;
+    out_pos.w = -vec4(mv * vec4( in_position, 1.0)).z;
+    shadow_texcoord = shadow_matrix0 * vec4( in_position, 1.0);
+}'''
+]
+
+class TestShaderUtility(unittest.TestCase):
+
+    def test_gles_cgc_compilable(self):
+        from ShaderUtility import ConvertESSLToCGCCompilable
+
+        for index in range(len(CGC_COMPILIBILITY_INPUT)):
+            input = CGC_COMPILIBILITY_INPUT[index]
+            expected_output = CGC_COMPILIBILITY_OUTPUT[index]
+            self.assertEqual(ConvertESSLToCGCCompilable(input), expected_output)
 
 if __name__ == '__main__':
     import logging
