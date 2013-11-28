@@ -6,6 +6,7 @@ from subprocess import Popen, PIPE
 
 version_declaration_pattern = r'\s*#\s*version\s+(\d+)\s+es\s*'
 layour_qualifier_pattern = r'layout\s*\(\s*location\s*=\s*(\d+)\s*\)\s*'
+sampler2DArray_pattern = r'\bsampler2DArray\b'
 
 def Preprocess(input_text):
 
@@ -68,4 +69,9 @@ def ConvertESSLToCGCCompilable(source):
         match = re.search(layour_qualifier_pattern, lines[i])
         if match:
             lines[i] = lines[i].replace(match.group(), '')
+
+        # replace sampler2DArray with sampler3D
+        match = re.search(sampler2DArray_pattern, lines[i])
+        if match:
+            lines[i] = lines[i].replace(match.group(), 'sampler3D')
     return '\n'.join(lines)

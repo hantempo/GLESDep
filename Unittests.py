@@ -1079,12 +1079,12 @@ class TestShaders(unittest.TestCase):
             self.assertEqual(input.read(), fs_source)
 
 CGC_COMPILIBILITY_INPUT = [
-# '#version 300 es' -> '#version 300'
+# '#version 300 es' -> '#versio and replace sampler2DArray with sampler3Dn 300'
 '''#version 300 es
 in vec2 out_texcoord0;
 out vec4 frag_color;
 
-uniform lowp sampler2D texture_unit0;
+uniform lowp sampler2DArray texture_unit0;
 uniform lowp vec3 color;
 
 void main()
@@ -1122,7 +1122,7 @@ CGC_COMPILIBILITY_OUTPUT = [
 in vec2 out_texcoord0;
 out vec4 frag_color;
 
-uniform lowp sampler2D texture_unit0;
+uniform lowp sampler3D texture_unit0;
 uniform lowp vec3 color;
 
 void main()
