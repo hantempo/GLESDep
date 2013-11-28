@@ -2,6 +2,34 @@ import unittest
 
 from ShaderParser import ShaderParser
 from ShaderUtility import Preprocess
+from GLESEnum import Enum
+from GLESContext import Context as GLES
+
+class GLESCallsPlayer(object):
+
+    DRAWCALL_NAMES = [
+        'glDrawArrays',
+        'glDrawArraysInstanced',
+        'glDrawElements',
+        'glDrawElementsInstanced',
+        'glDrawRangeElements',
+    ]
+
+    def __init__(self):
+        self.context = GLES()
+        self.collectors = []
+
+    def play_calls(self, calls):
+        for call_name, call_args in calls:
+            try:
+                f = getattr(self.context, call_name)
+                f(*call_args)
+            except AttributeError:
+                pass
+
+            if call_name in self.DRAWCALL_NAMES:
+                for collector in self.collectors:
+                    collector.collect(self.context)
 
 class TestPreprocessor(unittest.TestCase):
 
@@ -497,9 +525,6 @@ class TestFunction(unittest.TestCase):
 
         self.assertEqual(str(fun_def), 'vec3 calculate_normal(in vec2 tc)\n{\n    return vec3(tc, 0.1);\n}')
 
-from GLESEnum import Enum
-from GLESContext import Context as GLES
-
 class TestTextures(unittest.TestCase):
 
     def test_pixel_store(self):
@@ -924,14 +949,21 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(gles.glGetTexParameter(Enum.GL_TEXTURE_3D, Enum.GL_TEXTURE_IMMUTABLE_FORMAT), 1)
 
     def test_texture_collector(self):
-        gles = GLES()
+        call_replayer = GLESCallsPlayer()
+        gles = call_replayer.context
+        self.assertEqual(gles.GetCurrentProgram(), None)
 
         from Tools.TextureCollector import TextureCollector
         tc = TextureCollector()
+        call_replayer.collectors.append(tc)
 
         # create a 2D array texture
-        gles.glBindTexture(Enum.GL_TEXTURE_2D_ARRAY, 1)
-        gles.glCompressedTexImage2D(Enum.GL_TEXTURE_2D_ARRAY, 0, Enum.GL_COMPRESSED_RGB8_ETC2, 1, 1, 0, 8, '0000111122223333'.decode('hex'))
+        calls = [
+            ('glBindTexture', (Enum.GL_TEXTURE_2D_ARRAY, 1)),
+            ('glCompressedTexImage2D', (Enum.GL_TEXTURE_2D_ARRAY, 0, Enum.GL_COMPRESSED_RGB8_ETC2, 1, 1, 0, 8, '0000111122223333'.decode('hex'))),
+            ('glDrawArrays', (Enum.GL_LINES, 1, 100)),
+        ]
+        call_replayer.play_calls(calls)
 
         # collect textures
         tc.collect(gles)
@@ -946,12 +978,15 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tc.textures.initialized['0001_0000'], True)
 
         # create a mipmapped but empty cubemap texture
-        gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 3)
-        gles.glTexImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, Enum.GL_RGB8, 4, 4, 0, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, None)
-        gles.glTexImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, Enum.GL_RGB8, 2, 2, 0, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, None)
+        calls = [
+            ('glBindTexture', (Enum.GL_TEXTURE_CUBE_MAP, 3)),
+            ('glTexImage2D', (Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, Enum.GL_RGB8, 4, 4, 0, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, None)),
+            ('glTexImage2D', (Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, Enum.GL_RGB8, 2, 2, 0, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, None)),
+            ('glDrawArrays', (Enum.GL_LINES, 1, 100)),
+        ]
+        call_replayer.play_calls(calls)
 
         # collect textures
-        tc.collect(gles)
         self.assertEqual(len(tc.textures), 2)
         self.assertTrue('0003_0000' in tc.textures.index)
         self.assertEqual(tc.textures.type['0003_0000'], 'GL_TEXTURE_CUBE_MAP')
@@ -963,11 +998,14 @@ class TestTextures(unittest.TestCase):
         self.assertEqual(tc.textures.initialized['0003_0000'], False)
 
         # modify the cubemap texture
-        gles.glBindTexture(Enum.GL_TEXTURE_CUBE_MAP, 3)
-        gles.glTexSubImage2D(Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, 0, 0, 1, 1, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, '001122'.decode('hex'))
+        calls = [
+            ('glBindTexture', (Enum.GL_TEXTURE_CUBE_MAP, 3)),
+            ('glTexSubImage2D', (Enum.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, 0, 0, 1, 1, Enum.GL_RGB, Enum.GL_UNSIGNED_BYTE, '001122'.decode('hex'))),
+            ('glDrawArrays', (Enum.GL_LINES, 1, 100)),
+        ]
+        call_replayer.play_calls(calls)
 
         # collect textures
-        tc.collect(gles)
         self.assertEqual(len(tc.textures), 3)
         self.assertTrue('0003_0001' in tc.textures.index)
         self.assertEqual(tc.textures.type['0003_0001'], 'GL_TEXTURE_CUBE_MAP')
@@ -1033,28 +1071,32 @@ class TestShaders(unittest.TestCase):
         self.assertEqual(gles.glGetAttachedShaders(1, 1), (2, [2]))
 
     def test_shader_collector(self):
-        gles = GLES()
+        call_replayer = GLESCallsPlayer()
+        gles = call_replayer.context
         self.assertEqual(gles.GetCurrentProgram(), None)
 
         from Tools.ShaderCollector import ShaderCollector
         sc = ShaderCollector()
-        sc.collect(gles)
-        self.assertEqual(len(sc.shaders), 0)
+        call_replayer.collectors.append(sc)
 
         vs_source = "attribute vec3 fresnet;uniform float time;"
         fs_source = "uniform int anything;"
-        self.assertEqual(gles.glCreateProgram(1), 1)
-        self.assertEqual(gles.glCreateShader(Enum.GL_VERTEX_SHADER, 2), 2)
-        self.assertEqual(gles.glShaderSource(2, 2, ['attribute vec3 fresnet;', 'uniform float time;'], None), None)
-        self.assertEqual(gles.glCreateShader(Enum.GL_FRAGMENT_SHADER, 3), 3)
-        self.assertEqual(gles.glShaderSource(3, 1, [fs_source], None), None)
-        self.assertEqual(gles.glAttachShader(1, 2), None)
-        self.assertEqual(gles.glAttachShader(1, 3), None)
-        self.assertEqual(gles.glUseProgram(1), None)
+        calls = [
+            ('glCreateProgram', (1, )),
+            ('glCreateShader', (Enum.GL_VERTEX_SHADER, 2)),
+            ('glShaderSource', (2, 2, ['attribute vec3 fresnet;', 'uniform float time;'], None)),
+            ('glCreateShader', (Enum.GL_FRAGMENT_SHADER, 3)),
+            ('glShaderSource', (3, 1, [fs_source], None)),
+            ('glAttachShader', (1, 2)),
+            ('glAttachShader', (1, 3)),
+            ('glUseProgram', (1, )),
+            ('glDrawArrays', (Enum.GL_POINTS, 0, 10)),
+        ]
+
+        call_replayer.play_calls(calls)
         self.assertEqual(gles.glGet(Enum.GL_CURRENT_PROGRAM), 1)
         self.assertNotEqual(gles.GetCurrentProgram(), None)
 
-        sc.collect(gles)
         self.assertEqual(len(sc.shaders), 2)
         self.assertTrue('0002_0000' in sc.shaders.index)
         self.assertEqual(sc.shaders.type['0002_0000'], 'GL_VERTEX_SHADER')
@@ -1069,8 +1111,11 @@ class TestShaders(unittest.TestCase):
             self.assertEqual(input.read(), fs_source)
 
         fs_source = "uniform int anything;varying float anything;"
-        self.assertEqual(gles.glShaderSource(3, 1, [fs_source], None), None)
-        sc.collect(gles)
+        calls = [
+            ('glShaderSource', (3, 1, [fs_source], None)),
+            ('glDrawArrays', (Enum.GL_POINTS, 0, 10)),
+        ]
+        call_replayer.play_calls(calls)
         self.assertEqual(len(sc.shaders), 3)
         self.assertTrue('0003_0001' in sc.shaders.index)
         self.assertEqual(sc.shaders.type['0003_0001'], 'GL_FRAGMENT_SHADER')

@@ -10,6 +10,14 @@ def enum(*sequential, **named):
 Enum = enum(
     GL_NONE                         = 0x0000,
 
+    GL_POINTS                       = 0x0000,
+    GL_LINES                        = 0x0001,
+    GL_LINE_LOOP                    = 0x0002,
+    GL_LINE_STRIP                   = 0x0003,
+    GL_TRIANGLES                    = 0x0004,
+    GL_TRIANGLE_STRIP               = 0x0005,
+    GL_TRIANGLE_FAN                 = 0x0006,
+
     GL_TEXTURE_2D                   = 0x0DE1,
     GL_TEXTURE_CUBE_MAP             = 0x8513,
     GL_TEXTURE_CUBE_MAP_POSITIVE_X  = 0x8515,
