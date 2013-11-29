@@ -17,8 +17,19 @@ class ShaderObject(object):
 
 class ProgramObject(object):
 
+    # list of attributes to be recorded
+    Attributes = []
+
     def __init__(self):
         self.attached_shaders = []
+
+    def IsModified(self, context):
+        for shader in self.attached_shaders:
+            if context.glIsShader(shader):
+                shader = context.shader_objects[shader]
+                if shader.modified:
+                    return True
+        return False
 
 class TextureObject(object):
 
@@ -170,11 +181,6 @@ class Context(object):
     def glUseProgram(self, program):
         if self.glIsProgram(program):
             self.states[Enum.GL_CURRENT_PROGRAM] = program
-
-    def GetCurrentProgram(self):
-        current_program = self.glGet(Enum.GL_CURRENT_PROGRAM)
-        if self.glIsProgram(current_program):
-            return self.program_objects[current_program]
 
     # textures
 

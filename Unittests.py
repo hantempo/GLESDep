@@ -1,4 +1,4 @@
-import unittest
+import unittest, os
 
 from ShaderParser import ShaderParser
 from ShaderUtility import Preprocess
@@ -951,7 +951,6 @@ class TestTextures(unittest.TestCase):
     def test_texture_collector(self):
         call_replayer = GLESCallsPlayer()
         gles = call_replayer.context
-        self.assertEqual(gles.GetCurrentProgram(), None)
 
         from Tools.TextureCollector import TextureCollector
         tc = TextureCollector()
@@ -1073,7 +1072,6 @@ class TestShaders(unittest.TestCase):
     def test_shader_collector(self):
         call_replayer = GLESCallsPlayer()
         gles = call_replayer.context
-        self.assertEqual(gles.GetCurrentProgram(), None)
 
         from Tools.ShaderCollector import ShaderCollector
         sc = ShaderCollector()
@@ -1095,7 +1093,6 @@ class TestShaders(unittest.TestCase):
 
         call_replayer.play_calls(calls)
         self.assertEqual(gles.glGet(Enum.GL_CURRENT_PROGRAM), 1)
-        self.assertNotEqual(gles.GetCurrentProgram(), None)
 
         self.assertEqual(len(sc.shaders), 2)
         self.assertTrue('0002_0000' in sc.shaders.index)
@@ -1104,6 +1101,10 @@ class TestShaders(unittest.TestCase):
         self.assertTrue('0003_0000' in sc.shaders.index)
         self.assertEqual(sc.shaders.type['0003_0000'], 'GL_FRAGMENT_SHADER')
         self.assertEqual(sc.shaders.filename['0003_0000'], 'shaders/0003_0000.fragment')
+        self.assertEqual(len(sc.programs), 1)
+        self.assertTrue('0001_0000' in sc.programs.index)
+        self.assertEqual(os.readlink('shaders/0001_0000.vertex'), '0002_0000.vertex')
+        self.assertEqual(os.readlink('shaders/0001_0000.fragment'), '0003_0000.fragment')
 
         with open(sc.shaders.filename['0002_0000']) as input:
             self.assertEqual(input.read(), vs_source)
@@ -1120,6 +1121,11 @@ class TestShaders(unittest.TestCase):
         self.assertTrue('0003_0001' in sc.shaders.index)
         self.assertEqual(sc.shaders.type['0003_0001'], 'GL_FRAGMENT_SHADER')
         self.assertEqual(sc.shaders.filename['0003_0001'], 'shaders/0003_0001.fragment')
+        self.assertEqual(len(sc.programs), 2)
+        self.assertTrue('0001_0001' in sc.programs.index)
+        self.assertEqual(os.readlink('shaders/0001_0001.vertex'), '0002_0000.vertex')
+        self.assertEqual(os.readlink('shaders/0001_0001.fragment'), '0003_0001.fragment')
+
         with open(sc.shaders.filename['0003_0001']) as input:
             self.assertEqual(input.read(), fs_source)
 
